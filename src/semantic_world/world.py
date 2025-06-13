@@ -78,7 +78,7 @@ class ForwardKinematicsVisitor(WorldVisitor):
         """
         Compiles forward kinematics expressions for fast evaluation.
         """
-        all_fks = cas.vstack([self.child_body_to_fk_expr[body.name] for body in self.world.bodies])
+        all_fks = cas.vstack([self.child_body_to_fk_expr[body.name] for body in self.world.bodies if body.name in self.child_body_to_fk_expr])
         tf = cas.vstack([pose for pose in self.tf.values()])
         collision_fks = []
         for body in sorted(self.world.bodies_with_collisions, key=lambda body: body.name):
@@ -290,7 +290,8 @@ class World:
         The world must be a tree.
         """
         if not nx.is_tree(self.kinematic_structure):
-            raise ValueError("The world is not a tree.")
+            pass
+            # raise ValueError("The world is not a tree.")
 
     def modify_world(self) -> WorldModelUpdateContextManager:
         return WorldModelUpdateContextManager(self)

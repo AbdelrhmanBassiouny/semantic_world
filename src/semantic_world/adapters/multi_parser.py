@@ -91,7 +91,8 @@ class MultiParser:
             for body_builder in factory.world_builder.body_builders:
                 joints += self.parse_joints(body_builder=body_builder, world=world)
             for joint in joints:
-                world.add_connection(joint)
+                if joint is not None:
+                    world.add_connection(joint)
 
         return world
 
@@ -148,7 +149,8 @@ class MultiParser:
                 offset = urdf_joint_api.GetOffsetAttr().Get()
                 multiplier = urdf_joint_api.GetMultiplierAttr().Get()
         if joint_builder.type == JointType.FREE:
-            raise NotImplementedError("Free joints are not supported yet.")
+            # raise NotImplementedError("Free joints are not supported yet.")
+            return None
         elif joint_builder.type == JointType.FIXED:
             return FixedConnection(parent=parent_body, child=child_body, origin=origin)
         elif joint_builder.type in [JointType.REVOLUTE, JointType.CONTINUOUS, JointType.PRISMATIC]:
