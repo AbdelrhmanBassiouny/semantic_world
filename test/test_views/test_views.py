@@ -5,6 +5,9 @@ import unittest
 
 import pytest
 
+from semantic_world.connections import FixedConnection
+from semantic_world.prefixed_name import PrefixedName
+
 try:
     from ripple_down_rules.user_interface.gui import RDRCaseViewer
     from PyQt6.QtWidgets import QApplication
@@ -52,7 +55,7 @@ class ViewTestCase(unittest.TestCase):
     expert_answers_dir = os.path.join(test_dir, "test_expert_answers")
     app: Optional[QApplication] = None
     viewer: Optional[RDRCaseViewer] = None
-    use_gui: bool = True
+    use_gui: bool = False
 
     @classmethod
     def setUpClass(cls):
@@ -84,6 +87,27 @@ class ViewTestCase(unittest.TestCase):
 
     def test_fridge_view(self):
         self.fit_rules_for_a_view_in_kitchen(Fridge, scenario=self.test_fridge_view)
+
+    def test_apple_view(self):
+        apple_body = Body(PrefixedName("Apple"))
+        connection = FixedConnection(self.kitchen_world.root, apple_body)
+        self.kitchen_world.add_connection(connection)
+
+        apple_body = Body(PrefixedName("ApplePear"))
+        connection = FixedConnection(self.kitchen_world.root, apple_body)
+        self.kitchen_world.add_connection(connection)
+
+        apple_body = Body(PrefixedName("AppleMelon"))
+        connection = FixedConnection(self.kitchen_world.root, apple_body)
+        self.kitchen_world.add_connection(connection)
+
+        self.fit_rules_for_a_view_in_kitchen(Apple, scenario=self.test_apple_view, update_existing_views=False)
+
+    def test_pear_view(self):
+        apple_body = Body(PrefixedName("ApplePear"))
+        connection = FixedConnection(self.kitchen_world.root, apple_body)
+        self.kitchen_world.add_connection(connection)
+        self.fit_rules_for_a_view_in_kitchen(Pear, scenario=self.test_pear_view)
 
     @unittest.skip("Skipping test for wardrobe view as it requires user input")
     def test_wardrobe_view(self):
