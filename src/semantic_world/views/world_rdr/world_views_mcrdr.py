@@ -1,16 +1,16 @@
 from ripple_down_rules.datastructures.case import Case, create_case
-from ripple_down_rules.utils import make_set
-from ripple_down_rules.datastructures.enums import Stop
+from ripple_down_rules.helpers import get_an_updated_case_copy
 from typing_extensions import Optional, Set
+from ripple_down_rules.utils import make_set
 from .world_views_mcrdr_defs import *
 
 
 attribute_name = 'views'
-conclusion_type = (Drawer, Container, Handle, Fridge, set, Apple, list, Stop, Pear, Cabinet, Door,)
+conclusion_type = (Container, set, Handle, list, Cabinet, Fridge, Door, Drawer,)
 mutually_exclusive = False
 
 
-def classify(case: World, **kwargs) -> Set[Union[Drawer, Container, Handle, Fridge, Apple, Stop, Pear, Cabinet, Door]]:
+def classify(case: World, **kwargs) -> Set[Union[Container, Handle, Cabinet, Fridge, Door, Drawer]]:
     if not isinstance(case, Case):
         case = create_case(case, max_recursion_idx=3)
     conclusions = set()
@@ -32,24 +32,4 @@ def classify(case: World, **kwargs) -> Set[Union[Drawer, Container, Handle, Frid
 
     if conditions_10840634078579061471470540436169882059(case):
         conclusions.update(make_set(conclusion_10840634078579061471470540436169882059(case)))
-
-    if conditions_52105527190495248524986346719357133983(case):
-
-        if conditions_64835036784308343494726080812549537103(case):
-            pass
-        else:
-            conclusions.update(make_set(conclusion_52105527190495248524986346719357133983(case)))
-
-    if conditions_280872513725872974386672859756490030634(case):
-        conclusions.update(make_set(conclusion_280872513725872974386672859756490030634(case)))
-
-    if conditions_334264492049883475267158922414742648081(case):
-
-        if conditions_235169144625684529188900168101056825155(case):
-            pass
-        else:
-            conclusions.update(make_set(conclusion_334264492049883475267158922414742648081(case)))
-
-    if conditions_162443579946168380181368054170910504965(case):
-        conclusions.update(make_set(conclusion_162443579946168380181368054170910504965(case)))
     return conclusions

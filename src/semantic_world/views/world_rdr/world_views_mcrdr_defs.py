@@ -1,7 +1,7 @@
 from ..views import Apple, Cabinet, Container, Door, Drawer, Fridge, Handle, Pear
+from typing_extensions import List, Set, Union
 from ...connections import FixedConnection, PrismaticConnection, RevoluteConnection
 from ...world import World
-from typing_extensions import List, Set, Union
 
 
 def conditions_90574698325129464513441443063592862114(case) -> bool:
@@ -134,75 +134,5 @@ def conclusion_10840634078579061471470540436169882059(case) -> List[Fridge]:
         ]
         return [Fridge(c.parent, doors[door_bodies.index(c.child)]) for c in door_connections]
     return world_views_of_type_fridge(case)
-
-
-def conditions_52105527190495248524986346719357133983(case) -> bool:
-    def conditions_for_world_views_of_type_apple(case: World) -> bool:
-        """Get conditions on whether it's possible to conclude a value for World.views  of type Apple."""
-        return True
-    return conditions_for_world_views_of_type_apple(case)
-
-
-def conditions_64835036784308343494726080812549537103(case) -> bool:
-    def conditions_for_world_views_of_type_apple(case: World) -> bool:
-        """Get conditions on whether it's possible to conclude a value for World.views  of type Apple."""
-        return True
-    return conditions_for_world_views_of_type_apple(case)
-
-
-def conclusion_52105527190495248524986346719357133983(case) -> List[Apple]:
-    def world_views_of_type_apple(case: World) -> Apple:
-        """Get possible value(s) for World.views  of type Apple."""
-        return [Apple(body) for body in case.bodies if "Apple" in body.name.name]
-    return world_views_of_type_apple(case)
-
-
-def conditions_280872513725872974386672859756490030634(case) -> bool:
-    def conditions_for_world_views_of_type_pear(case: World) -> bool:
-        """Get conditions on whether it's possible to conclude a value for World.views  of type Pear."""
-        return True
-    return conditions_for_world_views_of_type_pear(case)
-
-
-def conclusion_280872513725872974386672859756490030634(case) -> List[Pear]:
-    def world_views_of_type_pear(case: World) -> Pear:
-        """Get possible value(s) for World.views  of type Pear."""
-        return [Pear(body) for body in case.bodies if "Pear" in body.name.name]
-    return world_views_of_type_pear(case)
-
-
-def conditions_334264492049883475267158922414742648081(case) -> bool:
-    def conditions_for_world_views_of_type_apple(case: World) -> bool:
-        """Get conditions on whether it's possible to conclude a value for World.views  of type Apple."""
-        return True
-    return conditions_for_world_views_of_type_apple(case)
-
-
-def conditions_235169144625684529188900168101056825155(case) -> bool:
-    def conditions_for_world_views_of_type_apple(case: World) -> bool:
-        """Get conditions on whether it's possible to conclude a value for World.views  of type Apple."""
-        return True
-    return conditions_for_world_views_of_type_apple(case)
-
-
-def conclusion_334264492049883475267158922414742648081(case) -> List[Apple]:
-    def world_views_of_type_apple(case: World) -> Apple:
-        """Get possible value(s) for World.views  of type Apple."""
-        return [Apple(b) for b in case.bodies if 'Apple' in b.name.name and 'Pear' not in b.name.name]
-    return world_views_of_type_apple(case)
-
-
-def conditions_162443579946168380181368054170910504965(case) -> bool:
-    def conditions_for_world_views_of_type_apple(case: World) -> bool:
-        """Get conditions on whether it's possible to conclude a value for World.views  of type Apple."""
-        return True
-    return conditions_for_world_views_of_type_apple(case)
-
-
-def conclusion_162443579946168380181368054170910504965(case) -> List[Apple]:
-    def world_views_of_type_apple(case: World) -> Apple:
-        """Get possible value(s) for World.views  of type Apple."""
-        return [Apple(b) for b in case.bodies if "Apple" in b.name.name and "Melon" not in b.name.name]
-    return world_views_of_type_apple(case)
 
 

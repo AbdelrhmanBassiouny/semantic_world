@@ -21,15 +21,3 @@ corner_case_59112619694893607910753808758642808601 = CaseFactoryMetaData(factory
 corner_case_10840634078579061471470540436169882059 = CaseFactoryMetaData(factory_method=ViewTestCase.get_kitchen_world, factory_idx=None, case_conf=None, scenario=ViewTestCase.test_fridge_view)
 
 
-corner_case_52105527190495248524986346719357133983 = CaseFactoryMetaData(factory_method=ViewTestCase.get_kitchen_world, factory_idx=None, case_conf=None, scenario=ViewTestCase.test_apple_view)
-
-
-corner_case_280872513725872974386672859756490030634 = CaseFactoryMetaData(factory_method=ViewTestCase.get_kitchen_world, factory_idx=None, case_conf=None, scenario=ViewTestCase.test_pear_view)
-
-
-corner_case_334264492049883475267158922414742648081 = CaseFactoryMetaData(factory_method=ViewTestCase.get_kitchen_world, factory_idx=None, case_conf=None, scenario=ViewTestCase.test_apple_view)
-
-
-corner_case_162443579946168380181368054170910504965 = CaseFactoryMetaData(factory_method=ViewTestCase.get_kitchen_world, factory_idx=None, case_conf=None, scenario=ViewTestCase.test_apple_view)
-
-
