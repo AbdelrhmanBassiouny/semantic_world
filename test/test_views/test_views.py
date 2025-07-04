@@ -4,7 +4,6 @@ import sys
 import unittest
 
 import pytest
-from sqlalchemy.testing import skip_test
 
 from semantic_world.connections import FixedConnection
 from semantic_world.prefixed_name import PrefixedName
@@ -23,6 +22,7 @@ from ripple_down_rules.datastructures.dataclasses import CaseQuery
 from ripple_down_rules.rdr import GeneralRDR
 from semantic_world.adapters.urdf import URDFParser
 from semantic_world.views import *
+
 try:
     from semantic_world.views.world_rdr import world_rdr
 except ImportError as e:
@@ -89,29 +89,6 @@ class ViewTestCase(unittest.TestCase):
     def test_fridge_view(self):
         self.fit_rules_for_a_view_in_kitchen(Fridge, scenario=self.test_fridge_view)
 
-    @pytest.mark.skip(reason="just for testing, no need to add these rules")
-    def test_apple_view(self):
-        apple_body = Body(PrefixedName("Apple"))
-        connection = FixedConnection(self.kitchen_world.root, apple_body)
-        self.kitchen_world.add_connection(connection)
-
-        apple_body = Body(PrefixedName("ApplePear"))
-        connection = FixedConnection(self.kitchen_world.root, apple_body)
-        self.kitchen_world.add_connection(connection)
-
-        apple_body = Body(PrefixedName("AppleMelon"))
-        connection = FixedConnection(self.kitchen_world.root, apple_body)
-        self.kitchen_world.add_connection(connection)
-
-        self.fit_rules_for_a_view_in_kitchen(Apple, scenario=self.test_apple_view, update_existing_views=False)
-
-    @pytest.mark.skip(reason="just for testing, no need to add these rules")
-    def test_pear_view(self):
-        apple_body = Body(PrefixedName("ApplePear"))
-        connection = FixedConnection(self.kitchen_world.root, apple_body)
-        self.kitchen_world.add_connection(connection)
-        self.fit_rules_for_a_view_in_kitchen(Pear, scenario=self.test_pear_view)
-
     @unittest.skip("Skipping test for wardrobe view as it requires user input")
     def test_wardrobe_view(self):
         self.fit_rules_for_a_view_in_apartment(Wardrobe, scenario=self.test_wardrobe_view)
@@ -146,8 +123,28 @@ class ViewTestCase(unittest.TestCase):
                                   type(v) is Container]
         self.assertTrue(len(drawer_container_names) == 14)
 
+    @pytest.mark.skip(reason="just for testing purposes, no need to add these to the rules")
+    def test_apple_view(self):
+        apple_body = Body(PrefixedName("Apple"))
+        connection = FixedConnection(self.kitchen_world.root, apple_body)
+        self.kitchen_world.add_connection(connection)
 
+        apple_body = Body(PrefixedName("ApplePear"))
+        connection = FixedConnection(self.kitchen_world.root, apple_body)
+        self.kitchen_world.add_connection(connection)
 
+        apple_body = Body(PrefixedName("AppleMelon"))
+        connection = FixedConnection(self.kitchen_world.root, apple_body)
+        self.kitchen_world.add_connection(connection)
+
+        self.fit_rules_for_a_view_in_kitchen(Apple, scenario=self.test_apple_view, update_existing_views=False)
+
+    @pytest.mark.skip(reason="just for testing purposes, no need to add these to the rules")
+    def test_pear_view(self):
+        apple_body = Body(PrefixedName("ApplePear"))
+        connection = FixedConnection(self.kitchen_world.root, apple_body)
+        self.kitchen_world.add_connection(connection)
+        self.fit_rules_for_a_view_in_kitchen(Pear, scenario=self.test_pear_view)
 
     @classmethod
     def get_kitchen_world(cls) -> World:
