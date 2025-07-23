@@ -1,6 +1,5 @@
-from typing_extensions import List, Set, Union
 from semantic_world.world_entity import Body, EnvironmentView, View
-from ripple_down_rules.datastructures.tracked_object import TrackedObjectMixin, QueryObject
+from ripple_down_rules.datastructures.tracked_object import TrackedObjectMixin, X
 from ripple_down_rules import *
 
 
@@ -11,10 +10,12 @@ def conditions_169119401358620755610132125806000007134(case) -> bool:
     return conditions_for_view_possible_locations_of_type_view(case)
 
 
-def conclusion_169119401358620755610132125806000007134(case) -> List[Union[type, View]]:
-    def view_possible_locations_of_type_view(case: View) -> List[Union[type, View]]:
+def conclusion_169119401358620755610132125806000007134(case) -> Generator[Type[View], None, None]:
+    def view_possible_locations_of_type_view(case: View) -> Generator[Type[View], None, None]:
         """Get possible value(s) for View.possible_locations  of type View."""
-        return [res[0] for res in has(QueryObject, type(case), recursive=True) if isA(res[0], EnvironmentView)]
-    return view_possible_locations_of_type_view(case)
+        Location = X
+        yield from (loc for loc, _ in has(Location, type(case), recursive=True)
+                    if isA(loc, EnvironmentView))
+    yield from view_possible_locations_of_type_view(case)
 
 

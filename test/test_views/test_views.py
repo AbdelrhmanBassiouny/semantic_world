@@ -67,8 +67,6 @@ class ViewTestCase(unittest.TestCase):
             cls.viewer = RDRCaseViewer()
 
     def test_dependency_graph(self):
-        TrackedObjectMixin.make_class_dependency_graph()
-        TrackedObjectMixin.to_dot("dependency_graph")
         assert has(Drawer, Handle)
         assert has(Cabinet, Drawer)
         assert has(Cabinet, Handle, recursive=True)
@@ -79,7 +77,6 @@ class ViewTestCase(unittest.TestCase):
         """
         Test the canBeLocatedIn predicate.
         """
-        TrackedObjectMixin.make_class_dependency_graph()
         world_reasoner = WorldReasoner(self.kitchen_world)
         views = world_reasoner.infer_views()
         fridges = [v for v in views if isinstance(v, Fridge)]
