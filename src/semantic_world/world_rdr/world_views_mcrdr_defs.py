@@ -1,7 +1,9 @@
-from typing_extensions import List, Union
+import itertools
 
-from semantic_world.views.views import Cabinet, Container, Door, Drawer, Fridge, Handle
+from typing_extensions import List, Union, Generator
+
 from semantic_world.connections import FixedConnection, PrismaticConnection, RevoluteConnection
+from semantic_world.views.views import Cabinet, Container, Door, Drawer, Fridge, Handle
 from semantic_world.world import World
 
 
@@ -21,12 +23,45 @@ def conclusion_90574698325129464513441443063592862114(case) -> List[Handle]:
     return get_handles(case)
 
 
-def conditions_14920098271685635920637692283091167284(case) -> bool:
-    def has_handles_and_fixed_and_prismatic_connections(case: World) -> bool:
+def conditions_14920098271685635920637692283091167284(case) -> Generator:
+    def has_handles_and_fixed_and_prismatic_connections(case: World) -> Generator:
         """Get conditions on whether it's possible to conclude a value for World.views  of type Container."""
-        return (any(v for v in case.views if type(v) is Handle) and
-                any(c for c in case.connections if isinstance(c, PrismaticConnection)) and
-                any(c for c in case.connections if isinstance(c, FixedConnection)))
+        yield from (Container(fc.parent) for v in filter(lambda cv: isinstance(cv, Handle), case.views)
+                    for pc in filter(lambda c: isinstance(c, PrismaticConnection), case.connections)
+                    for fc in filter(lambda c: isinstance(c, FixedConnection), case.connections)
+                    if fc.child == v.body and fc.parent == pc.child)
+
+        yield from (Container(fc.parent) for v, pc, fc in itertools.product(case.views, case.connections, case.connections)
+                    if isinstance(v, Handle) and isinstance(pc, PrismaticConnection) and isinstance(fc, FixedConnection)
+                    and fc.child == v.body and fc.parent == pc.child)
+
+        Var = lambda: None # Placeholder for Var, assuming it's defined elsewhere
+        As = lambda x, y: x  # Placeholder for As, assuming it's defined elsewhere
+        has_type = lambda x, y: isinstance(x, y)  # Placeholder for has_type, assuming it's defined elsewhere
+
+        V, FC, PC = Var(), Var(), Var()
+        yield from (Container(res[FC].parent)
+                    for res in As(case.views, V) and As(case.connections, FC) and As(case.connections, PC)
+                    and has_type(V, Handle) and has_type(FC, FixedConnection) and has_type(PC, PrismaticConnection)
+                    if res[FC].child == res[V].body and res[FC].parent == res[PC].child)
+
+        has_child = lambda x, y: x.child == y  # Placeholder for has_child, assuming it's defined elsewhere
+        has_parent = lambda x, y: x.parent == y  # Placeholder for has_parent, assuming it's defined elsewhere
+        has_body = lambda x, y: x.body == y
+
+        V, FC, PC, B, FCC, FCP, PCC = Var(), Var(), Var(), Var(), Var(), Var(), Var()
+        yield from (Container(res[PCC]) for res in As(case.views, V) and As(case.connections, FC) and As(case.connections, PC)
+                    and has_type(V, Handle) and has_type(FC, FixedConnection) and has_type(PC, PrismaticConnection)
+                    and has_child(FC, B) and has_body(V, B) and has_child(PC, PCC) and has_parent(FC, PCC))
+        """
+        (fc.parent
+        (v, fc, pc for v, fc, pc in As(case.views, V) and As(case.connections, FC) and As(case.connections, PC) --> The generators
+        and has_type(V, Handle) and has_type(FC, FixedConnection) and has_type(PC, PrismaticConnection) --> The Filters
+        if fc.child == v.body and fc.parent == pc.child) --> The relational constraints
+        Conditions are the filters and the relational constraints.
+        Or the conditions are the generators only, while the filters and relational constraints are computed as part
+        of the conclusion.
+        """
 
     return has_handles_and_fixed_and_prismatic_connections(case)
 
@@ -34,14 +69,15 @@ def conditions_14920098271685635920637692283091167284(case) -> bool:
 def conclusion_14920098271685635920637692283091167284(case) -> List[Container]:
     def get_containers(case: World) -> Union[set, Container, list]:
         """Get possible value(s) for World.views of types list/set of Container"""
-        prismatic_connections = [c for c in case.connections if isinstance(c, PrismaticConnection)]
-        fixed_connections = [c for c in case.connections if isinstance(c, FixedConnection)]
-        children_of_prismatic_connections = [c.child for c in prismatic_connections]
-        handles = [v for v in case.views if type(v) is Handle]
-        fixed_connections_with_handle_child = [fc for fc in fixed_connections if fc.child in [h.body for h in handles]]
-        drawer_containers = set(children_of_prismatic_connections).intersection(
-            set([fc.parent for fc in fixed_connections_with_handle_child]))
-        return [Container(b) for b in drawer_containers]
+        children_of_prismatic_connections = (c.child for c in case.connections if isinstance(c, PrismaticConnection))
+        fixed_connections = (c for c in case.connections if isinstance(c, FixedConnection))
+        handles = (v for v in case.views if type(v) is Handle)
+        for fc in fixed_connections:
+            if fc.child not in handles:
+                continue
+            for child in children_of_prismatic_connections:
+                if fc.parent == child:
+                    yield Container(child)
 
     return get_containers(case)
 
