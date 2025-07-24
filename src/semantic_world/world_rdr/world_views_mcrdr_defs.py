@@ -2,14 +2,14 @@ import itertools
 import uuid
 from dataclasses import dataclass, field
 
-from typing_extensions import List, Union, Generator
+from typing_extensions import List, Union, Generator, Iterable
 
 from ripple_down_rules import isA
 from semantic_world import Connection
 from semantic_world.connections import FixedConnection, PrismaticConnection, RevoluteConnection
 from semantic_world.views.views import Cabinet, Container, Door, Drawer, Fridge, Handle
 from semantic_world.world import World
-from semantic_world.world_entity import View
+from semantic_world.world_entity import View, Body
 
 
 def conditions_90574698325129464513441443063592862114(case) -> bool:
@@ -33,10 +33,22 @@ def conditions_14920098271685635920637692283091167284(case) -> Generator:
         """Get conditions on whether it's possible to conclude a value for World.views  of type Container."""
         has_type = lambda x, y: (x1, y for x1 in x if isinstance(x1, y))  # Placeholder for has_type, assuming it's defined elsewhere
 
-        FixedConnection.child is Handle.body and FixedConnection.parent is PrismaticConnection.child
-        FixedConnection.from_(case.connections)
-        PrismaticConnection.from_(case.connections)
-        Handle.from_(case.views)
+        FC: FixedConnection
+        PC: PrismaticConnection
+        H: Handle
+        FC.child == H.body and FC.parent == PC.child
+
+
+        fc: FixedConnection = FixedConnection.from_(case.connections)
+        pc: PrismaticConnection = PrismaticConnection.from_(case.connections)
+        h: Handle = Handle.from_(case.views)
+        yield from Container(fc.parent).where(fc.child == h.body and fc.parent == pc.child)
+
+        FC: Iterable[FixedConnection] = FixedConnection.from_(case.connections)
+        PC: Iterable[PrismaticConnection] = PrismaticConnection.from_(case.connections)
+        H: Iterable[Handle] = Handle.from_(case.views)
+
+        yield from (Container(fc.parent) for fc, pc, h in zip(FC, PC, H) if fc.child is h.body and fc.parent is pc.child)
 
         # PYTHONIC Like + Functional/Prolog Like
         v: Handle
@@ -47,6 +59,27 @@ def conditions_14920098271685635920637692283091167284(case) -> Generator:
                     for pc, _ in isA(case.connections, PrismaticConnection)
                     for fc, _ in isA(case.connections, FixedConnection)
                     if fc.child == v.body and fc.parent == pc.child)
+
+        # PYTHONIC Like + Functional/Prolog Like
+        ### Needed Data Generation
+
+        for h, _ in isA(case.views, Handle):
+            for pc, _ in isA(case.connections, PrismaticConnection):
+                for fc, _ in isA(case.connections, FixedConnection):
+                    yield h, pc, fc
+
+        yield from (isA(case.views, Handle) & isA(case.connections, PrismaticConnection)
+                    & isA(case.connections, FixedConnection))
+
+        yield from (Handle(case.views) & PrismaticConnection(case.connections)
+                    & FixedConnection(case.connections))
+
+        ### Conclusion Construction (SQL view construction (The joining of the tables))
+        h: Handle
+        pc: PrismaticConnection
+        fc: FixedConnection
+        if fc.child == h.body and fc.parent == pc.child:
+            yield Container(fc.parent)
 
         @dataclass(unsafe_hash=True)
         class Var:
@@ -74,11 +107,6 @@ def conditions_14920098271685635920637692283091167284(case) -> Generator:
                     for res in As(case.views, V) and As(case.connections, FC) and As(case.connections, PC)
                     and has_type(V, Handle) and has_type(FC, FixedConnection) and has_type(PC, PrismaticConnection)
                     if res[FC].child == res[V].body and res[FC].parent == res[PC].child)
-
-
-
-
-
 
 
 
