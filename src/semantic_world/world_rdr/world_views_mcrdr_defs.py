@@ -4,9 +4,12 @@ from dataclasses import dataclass, field
 
 from typing_extensions import List, Union, Generator
 
+from ripple_down_rules import isA
+from semantic_world import Connection
 from semantic_world.connections import FixedConnection, PrismaticConnection, RevoluteConnection
 from semantic_world.views.views import Cabinet, Container, Door, Drawer, Fridge, Handle
 from semantic_world.world import World
+from semantic_world.world_entity import View
 
 
 def conditions_90574698325129464513441443063592862114(case) -> bool:
@@ -26,18 +29,24 @@ def conclusion_90574698325129464513441443063592862114(case) -> List[Handle]:
 
 
 def conditions_14920098271685635920637692283091167284(case) -> Generator:
-    def has_handles_and_fixed_and_prismatic_connections(case: World) -> Generator:
+    def has_containers(case: World) -> Generator:
         """Get conditions on whether it's possible to conclude a value for World.views  of type Container."""
-        yield from (Container(fc.parent) for v in filter(lambda cv: isinstance(cv, Handle), case.views)
-                    for pc in filter(lambda c: isinstance(c, PrismaticConnection), case.connections)
-                    for fc in filter(lambda c: isinstance(c, FixedConnection), case.connections)
+        has_type = lambda x, y: (x1, y for x1 in x if isinstance(x1, y))  # Placeholder for has_type, assuming it's defined elsewhere
+
+        FixedConnection.child is Handle.body and FixedConnection.parent is PrismaticConnection.child
+        FixedConnection.from_(case.connections)
+        PrismaticConnection.from_(case.connections)
+        Handle.from_(case.views)
+
+        # PYTHONIC Like + Functional/Prolog Like
+        v: Handle
+        pc: PrismaticConnection
+        fc: FixedConnection
+        yield from (Container(fc.parent)
+                    for v, _ in isA(case.views, Handle)
+                    for pc, _ in isA(case.connections, PrismaticConnection)
+                    for fc, _ in isA(case.connections, FixedConnection)
                     if fc.child == v.body and fc.parent == pc.child)
-
-        yield from (Container(fc.parent) for v, pc, fc in itertools.product(case.views, case.connections, case.connections)
-                    if isinstance(v, Handle) and isinstance(pc, PrismaticConnection) and isinstance(fc, FixedConnection)
-                    and fc.child == v.body and fc.parent == pc.child)
-
-        has_type = lambda x, y: isinstance(x, y)  # Placeholder for has_type, assuming it's defined elsewhere
 
         @dataclass(unsafe_hash=True)
         class Var:
@@ -55,18 +64,41 @@ def conditions_14920098271685635920637692283091167284(case) -> Generator:
             def __and__(self, other):
                 return (item for item in self if all(self.var == k and item[self.var] == v for k, v in other.items()))
 
-        V, FC, PC = Var(), Var(), Var()
+            def __or__(self, other):
+                return
+
+        V: View = Var()
+        FC: FixedConnection = Var()
+        PC: PrismaticConnection = Var()
         yield from (Container(res[FC].parent)
                     for res in As(case.views, V) and As(case.connections, FC) and As(case.connections, PC)
                     and has_type(V, Handle) and has_type(FC, FixedConnection) and has_type(PC, PrismaticConnection)
                     if res[FC].child == res[V].body and res[FC].parent == res[PC].child)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         has_child = lambda x, y: x.child == y  # Placeholder for has_child, assuming it's defined elsewhere
         has_parent = lambda x, y: x.parent == y  # Placeholder for has_parent, assuming it's defined elsewhere
         has_body = lambda x, y: x.body == y
 
         V, FC, PC, B, FCC, FCP, PCC = Var(), Var(), Var(), Var(), Var(), Var(), Var()
-        yield from (Container(res[PCC]) for res in As(case.views, V) and As(case.connections, FC) and As(case.connections, PC)
+        yield from (Container(res[PCC])
+                    for res in As(case.views, V) and As(case.connections, FC) and As(case.connections, PC)
                     and has_type(V, Handle) and has_type(FC, FixedConnection) and has_type(PC, PrismaticConnection)
                     and has_child(FC, B) and has_body(V, B) and has_child(PC, PCC) and has_parent(FC, PCC))
         """
