@@ -1,4 +1,6 @@
 import itertools
+import uuid
+from dataclasses import dataclass, field
 
 from typing_extensions import List, Union, Generator
 
@@ -35,9 +37,23 @@ def conditions_14920098271685635920637692283091167284(case) -> Generator:
                     if isinstance(v, Handle) and isinstance(pc, PrismaticConnection) and isinstance(fc, FixedConnection)
                     and fc.child == v.body and fc.parent == pc.child)
 
-        Var = lambda: None # Placeholder for Var, assuming it's defined elsewhere
-        As = lambda x, y: x  # Placeholder for As, assuming it's defined elsewhere
         has_type = lambda x, y: isinstance(x, y)  # Placeholder for has_type, assuming it's defined elsewhere
+
+        @dataclass(unsafe_hash=True)
+        class Var:
+            _id: int = field(default_factory=lambda: int(uuid.uuid4()), init=False, repr=False)
+
+        class As:
+            def __init__(self, iterable, var):
+                self.iterable = iterable
+                self.var = var
+
+            def __iter__(self):
+                for item in self.iterable:
+                    yield {self.var: item}
+
+            def __and__(self, other):
+                return (item for item in self if all(self.var == k and item[self.var] == v for k, v in other.items()))
 
         V, FC, PC = Var(), Var(), Var()
         yield from (Container(res[FC].parent)
