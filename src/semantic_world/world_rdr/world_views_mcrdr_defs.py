@@ -33,16 +33,53 @@ def conditions_14920098271685635920637692283091167284(case) -> Generator:
         """Get conditions on whether it's possible to conclude a value for World.views  of type Container."""
         has_type = lambda x, y: (x1, y for x1 in x if isinstance(x1, y))  # Placeholder for has_type, assuming it's defined elsewhere
 
+        body = Body('b')
+        prismatic_connection = PrismaticConnection('pc')
+        yield from (Generate(Container(body)).where(
+                          body.from_(prismatic_connection.child),
+                          prismatic_connection.from_(case.connections))
+                    )
+
+        handle = Handle('b')
+        fixed_connection = FixedConnection('pc')
+        prismatic_connection = PrismaticConnection('pc')
+        yield from Generate(Container(body)).where(
+                                                    body.from_(fixed_connection.parent),
+                                                    fixed_connection.child == handle.body,
+                                                    fixed_connection.parent == prismatic_connection.child,
+                                                    handle.from_(case.views),
+                                                    fixed_connection.from_(case.connections),
+                                                    prismatic_connection.from_(case.connections))
+
+        body = Body('b')
+        pc = PrismaticConnection('pc')
+        yield from Generate(Container(body)).where(isA(body, pc.child),
+                                                isA(pc, case.connections))
+
+        body = Body('b')
+        pc = PrismaticConnection('pc')
+        yield from Generate(Container(body)).where(body == pc.child,
+                                                   pc == case.connections)
+
+        body: Body = Var('b')
+        pc: PrismaticConnection = Var('pc')
+        yield from Generate(Container(body)).where(body == pc.child,
+                                                   pc.from_(isA(case.connections, PrismaticConnection)))
+
         FC: FixedConnection
         PC: PrismaticConnection
         H: Handle
         FC.child == H.body and FC.parent == PC.child
 
 
-        fc: FixedConnection = FixedConnection.from_(case.connections)
-        pc: PrismaticConnection = PrismaticConnection.from_(case.connections)
-        h: Handle = Handle.from_(case.views)
-        yield from Container(fc.parent).where(fc.child == h.body and fc.parent == pc.child)
+        with RuleWriting():
+            fixed_connection = FixedConnection(case.connections)
+            prismatic_connection = PrismaticConnection(case.connections)
+            handle = Handle(case.views)
+            body = Body(fixed_connection.parent)
+            yield from (Container(body)
+                        .where(fixed_connection.child == handle.body,
+                               fixed_connection.parent == prismatic_connection.child))
 
         FC: Iterable[FixedConnection] = FixedConnection.from_(case.connections)
         PC: Iterable[PrismaticConnection] = PrismaticConnection.from_(case.connections)
