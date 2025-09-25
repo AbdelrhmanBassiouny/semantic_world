@@ -7,7 +7,6 @@ from typing import Dict, Tuple, Union, Set
 
 import numpy as np
 from entity_query_language import the, entity, let
-
 from ormatic.eql_interface import eql_to_sql
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
@@ -130,27 +129,79 @@ class ProcthorDoor:
             Point3(0, -width_origin_center, height_origin_center)
         )
 
+    def _get_double_door_factory(self) -> DoubleDoorFactory:
+        """
+        Parses the parameters according to the double door assumptions, and returns a double door factory.
+        """
+        one_door_scale = Scale(self.thickness, self.scale.y * 0.5, self.scale.z)
+        x_direction: float = one_door_scale.x / 2
+        y_direction: float = one_door_scale.y / 2
+        z_direction: float = one_door_scale.z / 2
+        handle_directions = [Direction.Y, Direction.NEGATIVE_Y]
+
+        door_factories = []
+        door_transforms = []
+
+        for index, direction in enumerate(handle_directions):
+            single_door_name = PrefixedName(
+                f"{self.name.name}_{index}", self.name.prefix
+            )
+            door_factory = self._get_single_door_factory(
+                single_door_name, one_door_scale, direction
+            )
+
+            door_factories.append(door_factory)
+
+            parent_T_door = TransformationMatrix.from_point_rotation_matrix(
+                Point3(
+                    x_direction,
+                    (
+                        y_direction
+                        if door_factory.handle_direction == Direction.NEGATIVE_Y
+                        else -y_direction
+                    ),
+                    z_direction,
+                )
+            )
+            door_transforms.append(parent_T_door)
+
+        double_door_factory = DoubleDoorFactory(
+            name=self.name,
+            door_factories=door_factories,
+            door_transforms=door_transforms,
+        )
+        return double_door_factory
+
+    def _get_single_door_factory(
+        self,
+        name: Optional[PrefixedName] = None,
+        scale: Optional[Scale] = None,
+        handle_direction: Direction = Direction.Y,
+    ):
+        """
+        Parses the parameters according to the single door assumptions, and returns a single door factory.
+        """
+        name = self.name if name is None else name
+        scale = self.scale if scale is None else scale
+        handle_name = PrefixedName(f"{name.name}_handle", name.prefix)
+        door_factory = DoorFactory(
+            name=name,
+            scale=scale,
+            handle_factory=HandleFactory(name=handle_name),
+            handle_direction=handle_direction,
+        )
+        return door_factory
+
     def get_factory(self) -> Union[DoorFactory, DoubleDoorFactory]:
         """
         Returns a Factory for the door, either a DoorFactory or a DoubleDoorFactory,
         depending on its name. If the door's name contains "double", it is treated as a double door.
         """
-        handle_name = PrefixedName(f"{self.name.name}_handle", self.name.prefix)
-        if "double" in self.name.name.lower():
-            door_factory = DoubleDoorFactory(
-                name=self.name,
-                scale=self.scale,
-                handle_factory=HandleFactory(name=handle_name),
-            )
-        else:
-            door_factory = DoorFactory(
-                name=self.name,
-                scale=self.scale,
-                handle_factory=HandleFactory(name=handle_name),
-                handle_direction=Direction.Y,
-            )
 
-        return door_factory
+        if "double" in self.name.name.lower():
+            return self._get_double_door_factory()
+        else:
+            return self._get_single_door_factory()
 
 
 @dataclass
@@ -439,7 +490,7 @@ class ProcthorObject:
                     child=child_world.root,
                     origin_expression=obj_T_child,
                 )
-                body_world.merge_world(child_world, child_connection)
+                body_world.merge_world(child_world, child_connection, handle_duplicates=True)
 
             return body_world
 
@@ -475,7 +526,7 @@ def unity_to_semantic_digital_twin_transform(
     unity_transform_matrix = np.asarray(unity_transform_matrix, float).reshape(4, 4)
 
     return TransformationMatrix(
-        conjugation_matrix @ unity_transform_matrix @ inverse_conjugation_matrix
+        data=conjugation_matrix @ unity_transform_matrix @ inverse_conjugation_matrix
     )
 
 
@@ -538,7 +589,7 @@ class ProcTHORParser:
                 child=room_world.root,
                 origin_expression=procthor_room.world_T_room,
             )
-            world.merge_world(room_world, room_connection)
+            world.merge_world(room_world, room_connection, handle_duplicates=True)
 
     def import_objects(self, world: World, objects: List[Dict]):
         """
@@ -578,7 +629,7 @@ class ProcTHORParser:
                 child=wall_world.root,
                 origin_expression=procthor_wall.world_T_wall,
             )
-            world.merge_world(wall_world, wall_connection)
+            world.merge_world(wall_world, wall_connection, handle_duplicates=True)
 
     @staticmethod
     def _build_procthor_wall_from_polygon(
@@ -677,14 +728,14 @@ def get_world_by_asset_id(session: Session, asset_id: str) -> Optional[World]:
     asset_id = asset_id.lower()
     expr = the(
         entity(
-            world := let(name="world", type_=WorldMapping),
+            world := let(type_=WorldMapping),
             world.name == asset_id,
         )
     )
     other_possible_name = "_".join(asset_id.split("_")[:-1])
     expr2 = the(
         entity(
-            world := let(name="world", type_=WorldMapping),
+            world := let(type_=WorldMapping),
             world.name == other_possible_name,
         )
     )

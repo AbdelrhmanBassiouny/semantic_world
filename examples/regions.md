@@ -1,15 +1,14 @@
 ---
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .md
-      format_name: markdown
-      format_version: '1.3'
-      jupytext_version: 1.17.3
-  kernelspec:
-    display_name: Python 3
-    language: python
-    name: python3
+jupytext:
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.16.4
+kernelspec:
+  display_name: Python 3
+  language: python
+  name: python3
 ---
 
 (regions)=
@@ -29,13 +28,14 @@ Used Concepts:
 
 First, let's create a simple table with one leg.
 
-```python
+```{code-cell} ipython2
 from semantic_world.datastructures.prefixed_name import PrefixedName
 from semantic_world.spatial_types import TransformationMatrix
 from semantic_world.world import World
 from semantic_world.world_description.connections import FixedConnection, Connection6DoF
 from semantic_world.world_description.geometry import Box, Scale
 from semantic_world.world_description.world_entity import Body, Region
+from semantic_world.spatial_computations.raytracer import RayTracer
 
 world = World()
 
@@ -78,7 +78,7 @@ with world.modify_world():
 
 Next, we create a region describing the top of the table. We declare that the region is a very thin box that sits on top of the table-top.
 
-```python
+```{code-cell} ipython2
 table_surface = Region(
     name=PrefixedName("supporting surface of table"),
 )
@@ -94,7 +94,7 @@ Regions are connected the same way bodies are connected.
 Hence, you can specify how the regions move w. r. t. to a body or even another region.
 We will now say the the region moves exactly as the table top moves.
 
-```python
+```{code-cell} ipython2
 with world.modify_world():
     world.add_kinematic_structure_entity(table_surface)
     connection = FixedConnection(table_top, table_surface, _world=world)
@@ -104,7 +104,7 @@ print(world.regions)
 
 We can now see that if we move the table, we also move the region.
 
-```python
+```{code-cell} ipython2
 print(table_surface.global_pose.to_position().to_np()[:3])
 
 with world.modify_world():

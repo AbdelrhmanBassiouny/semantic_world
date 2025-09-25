@@ -16,6 +16,9 @@ parts:
         - file: examples/regions
         - file: examples/views
         - file: examples/persistence_of_annotated_worlds
+- caption: Developer Guide
+  chapters:
+    - file: developer_guide
 - caption: Concepts
   chapters:
     - file: kinematic_world

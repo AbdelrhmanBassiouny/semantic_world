@@ -30,14 +30,15 @@ apartment = os.path.join(get_semantic_world_directory_root(os.getcwd()), "resour
 
 ```
 
-Next we need to initialize a parser that reads this file. There are many parsers available.
+Next we need to initialize a parser that reads this file. There are many parsers available. 
+To read this specific urdf file, the `https://github.com/code-iai/iai_maps/tree/ros-jazzy/` repository needs to be installed
+inside your ROS2 workspace.
 
 ```python
 from semantic_world.adapters.urdf import URDFParser  
   
 parser = URDFParser.from_file(apartment)  
 world = parser.parse()  
-print(world)
 ```
 
 This constructs a world you can visualize, interact and annotate. Be aware that worlds loaded from files have no semantic annotations and serve as purely kinematic models.

@@ -2,27 +2,12 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing_extensions import Optional, Tuple, Union, List, Dict
 
+from typing_extensions import Optional, Tuple, Union, List, Dict
 from urdf_parser_py import urdf as urdfpy
 
-from ..world_description.connections import (
-    RevoluteConnection,
-    PrismaticConnection,
-    FixedConnection,
-)
-from ..world_description.degree_of_freedom import DegreeOfFreedom
-from ..exceptions import ParsingError
-from ..world_description.geometry import (
-    Box,
-    Sphere,
-    Cylinder,
-    FileMesh,
-    Scale,
-    Shape,
-    Color,
-)
 from ..datastructures.prefixed_name import PrefixedName
+from ..exceptions import ParsingError
 from ..spatial_types import spatial_types as cas
 from ..spatial_types.derivatives import Derivatives, DerivativeMap
 from ..spatial_types.spatial_types import TransformationMatrix, Vector3
@@ -32,6 +17,21 @@ from ..utils import (
     robot_name_from_urdf_string,
 )
 from ..world import World
+from ..world_description.connections import (
+    RevoluteConnection,
+    PrismaticConnection,
+    FixedConnection,
+)
+from ..world_description.degree_of_freedom import DegreeOfFreedom
+from ..world_description.geometry import (
+    Box,
+    Sphere,
+    Cylinder,
+    FileMesh,
+    Scale,
+    Color,
+)
+from ..world_description.shape_collection import ShapeCollection
 from ..world_description.world_entity import Body, Connection
 
 connection_type_map = {  # 'unknown': JointType.UNKNOWN,
@@ -60,34 +60,38 @@ def urdf_joint_to_limits(
     """
     lower_limits = DerivativeMap()
     upper_limits = DerivativeMap()
+    limit = getattr(urdf_joint, "limit", None)
     if not urdf_joint.type == "continuous":
-        try:
-            lower_limits.position = max(
-                urdf_joint.safety_controller.soft_lower_limit, urdf_joint.limit.lower
-            )
-            upper_limits.position = min(
-                urdf_joint.safety_controller.soft_upper_limit, urdf_joint.limit.upper
-            )
-        except AttributeError:
-            try:
-                lower_limits.position = urdf_joint.limit.lower
-                upper_limits.position = urdf_joint.limit.upper
-            except AttributeError:
-                pass
-    try:
-        lower_limits.velocity = -urdf_joint.limit.velocity
-        upper_limits.velocity = urdf_joint.limit.velocity
-    except AttributeError:
-        pass
+        lower = limit.lower if limit is not None else None
+        upper = limit.upper if limit is not None else None
+
+        safety_controller = getattr(urdf_joint, "safety_controller", None)
+        lower = (
+            max(safety_controller.soft_lower_limit, limit.lower)
+            if safety_controller is not None and limit is not None
+            else lower
+        )
+        upper = (
+            min(safety_controller.soft_upper_limit, limit.upper)
+            if safety_controller is not None and limit is not None
+            else upper
+        )
+
+        lower_limits.position = lower
+        upper_limits.position = upper
+
+    velocity = getattr(limit, "velocity", None) if limit is not None else None
+    lower_limits.velocity = -velocity if velocity is not None else None
+    upper_limits.velocity = velocity if velocity is not None else None
+
     if urdf_joint.mimic is not None:
-        if urdf_joint.mimic.multiplier is not None:
-            multiplier = urdf_joint.mimic.multiplier
-        else:
-            multiplier = 1
-        if urdf_joint.mimic.offset is not None:
-            offset = urdf_joint.mimic.offset
-        else:
-            offset = 0
+        multiplier = (
+            urdf_joint.mimic.multiplier
+            if urdf_joint.mimic.multiplier is not None
+            else 1
+        )
+        offset = urdf_joint.mimic.offset if urdf_joint.mimic.offset is not None else 0
+
         for d2 in Derivatives.range(Derivatives.position, Derivatives.velocity):
             lower_limits.data[d2] -= offset
             upper_limits.data[d2] -= offset
@@ -193,16 +197,9 @@ class URDFParser:
         """
         connection_name = PrefixedName(joint.name, prefix)
         connection_type = connection_type_map.get(joint.type, Connection)
-        if joint.origin is not None:
-            translation_offset = joint.origin.xyz
-            rotation_offset = joint.origin.rpy
-        else:
-            translation_offset = None
-            rotation_offset = None
-        if translation_offset is None:
-            translation_offset = [0, 0, 0]
-        if rotation_offset is None:
-            rotation_offset = [0, 0, 0]
+        translation_offset = getattr(joint.origin, "xyz", [0, 0, 0])
+        rotation_offset = getattr(joint.origin, "rpy", [0, 0, 0])
+
         parent_T_child = cas.TransformationMatrix.from_xyz_rpy(
             x=translation_offset[0],
             y=translation_offset[1],
@@ -211,8 +208,8 @@ class URDFParser:
             pitch=rotation_offset[1],
             yaw=rotation_offset[2],
         )
-        if connection_type == FixedConnection:
-            return connection_type(
+        if connection_type is FixedConnection:
+            return FixedConnection(
                 name=connection_name,
                 parent=parent,
                 child=child,
@@ -220,22 +217,14 @@ class URDFParser:
             )
 
         lower_limits, upper_limits = urdf_joint_to_limits(joint)
-        is_mimic = joint.mimic is not None
-        multiplier = None
-        offset = None
-        if is_mimic:
-            if joint.mimic.multiplier is not None:
-                multiplier = joint.mimic.multiplier
-            else:
-                multiplier = 1
-            if joint.mimic.offset is not None:
-                offset = joint.mimic.offset
-            else:
-                offset = 0
-
-            # dof_name = PrefixedName(joint.mimic.joint, prefix)
-
         dof_name = connection_name
+        multiplier = offset = None
+        if joint.mimic:
+            multiplier = (
+                joint.mimic.multiplier if joint.mimic.multiplier is not None else 1
+            )
+            offset = joint.mimic.offset if joint.mimic.offset is not None else 0
+            dof_name = PrefixedName(joint.mimic.joint, prefix)
 
         try:
             dof = world.get_degree_of_freedom_by_name(dof_name)
@@ -267,19 +256,22 @@ class URDFParser:
         :return: The parsed link object.
         """
         name = PrefixedName(prefix=self.prefix, name=link.name)
-        visuals = self.parse_geometry(link.visuals, parent_frame)
-        collisions = self.parse_geometry(link.collisions, parent_frame)
-        return Body(name=name, visual=visuals, collision=collisions)
+        body = Body(name=name)
+        visuals = self.parse_geometry(link.visuals, body)
+        collisions = self.parse_geometry(link.collisions, body)
+        body.visual = visuals
+        body.collision = collisions
+        return body
 
     def parse_geometry(
         self,
         geometry: Union[List[urdfpy.Collision], List[urdfpy.Visual]],
-        parent_frame: PrefixedName,
-    ) -> List[Shape]:
+        body: Body,
+    ) -> ShapeCollection:
         """
         Parses a URDF geometry to the corresponding shapes.
         :param geometry: The URDF geometry to parse either the collisions of visuals.'
-        :param parent_frame: The parent frame of the geometry, used for transformations.
+        :param body: The body of the geometry, used for back referencing.
         :return: A List of shapes corresponding to the URDF geometry.
         """
         res = []
@@ -293,19 +285,10 @@ class URDFParser:
             )
         )
         for i, geom in enumerate(geometry):
-            params = (
-                (*(geom.origin.xyz + geom.origin.rpy),)
-                if geom.origin
-                else (
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                )
+            params = (*(geom.origin.xyz + geom.origin.rpy),) if geom.origin else ()
+            origin_transform = TransformationMatrix.from_xyz_rpy(
+                *params, reference_frame=body
             )
-            origin_transform = TransformationMatrix.from_xyz_rpy(*params)
             if isinstance(geom.geometry, urdfpy.Box):
                 color = (
                     Color(*material_dict.get(geom.material.name, (1, 1, 1, 1)))
@@ -356,7 +339,7 @@ class URDFParser:
                         scale=Scale(*(geom.geometry.scale or (1, 1, 1))),
                     )
                 )
-        return res
+        return ShapeCollection(res, reference_frame=body)
 
     def parse_file_path(self, file_path: str) -> str:
         """

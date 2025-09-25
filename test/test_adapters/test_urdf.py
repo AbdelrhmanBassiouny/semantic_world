@@ -49,6 +49,13 @@ class URDFParserTestCase(unittest.TestCase):
         self.assertTrue(len(world.connections) > 0)
         self.assertTrue(world.root.name.name == "base_footprint")
 
+    def test_mimic_joints(self):
+        world = self.pr2_parser.parse()
+        joint_to_be_mimiced = world.get_connection_by_name("l_gripper_l_finger_joint")
+        mimic_joint = world.get_connection_by_name("l_gripper_r_finger_joint")
+
+        self.assertEqual(joint_to_be_mimiced.dofs, mimic_joint.dofs)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,7 +7,7 @@ import os
 from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import IntEnum
-from functools import wraps, lru_cache
+from functools import wraps, lru_cache, cached_property
 from itertools import combinations_with_replacement
 
 import matplotlib.pyplot as plt
@@ -29,23 +29,26 @@ from typing_extensions import (
 from typing_extensions import List
 from typing_extensions import Type, Set
 
-from .world_description.connection_factories import ConnectionFactory
 from .callbacks.callback import StateChangeCallback, ModelChangeCallback
+from .collision_checking.collision_detector import CollisionDetector
+from .collision_checking.trimesh_collision_detector import TrimeshCollisionDetector
 from .datastructures.prefixed_name import PrefixedName
+from .datastructures.types import NpMatrix4x4
 from .exceptions import (
     DuplicateViewError,
     AddingAnExistingViewError,
     ViewNotFoundError,
-    AlreadyBelongsToAWorldError, DuplicateKinematicStructureEntityError,
+    AlreadyBelongsToAWorldError,
+    DuplicateKinematicStructureEntityError,
 )
 from .robots import AbstractRobot
 from .spatial_computations.forward_kinematics import ForwardKinematicsVisitor
 from .spatial_computations.ik_solver import InverseKinematicsSolver
+from .spatial_computations.raytracer import RayTracer
 from .spatial_types import spatial_types as cas
 from .spatial_types.derivatives import Derivatives
-from .spatial_types.math import inverse_frame
-from .datastructures.types import NpMatrix4x4
 from .utils import IDGenerator, copy_lru_cache
+from .world_description.connection_factories import ConnectionFactory
 from .world_description.connections import (
     ActiveConnection,
     PassiveConnection,
@@ -375,6 +378,22 @@ class World:
                 dofs.update(set(connection.passive_dofs))
         return dofs
 
+    @cached_property
+    def collision_detector(self) -> CollisionDetector:
+        """
+        A collision detector for the world.
+        :return: A collision detector for the world.
+        """
+        return TrimeshCollisionDetector(self)
+
+    @cached_property
+    def ray_tracer(self) -> RayTracer:
+        """
+        A ray tracer for the world.
+        :return: A ray tracer for the world.
+        """
+        return RayTracer(self)
+
     def validate(self) -> bool:
         """
         Validate the world.
@@ -436,10 +455,16 @@ class World:
         self._add_degree_of_freedom(dof)
 
     @atomic_world_modification(modification=RemoveDegreeOfFreedomModification)
-    def remove_degree_of_freedom(self, dof: DegreeOfFreedom) -> None:
+    def _remove_degree_of_freedom(self, dof: DegreeOfFreedom) -> None:
         dof._world = None
         self.degrees_of_freedom.remove(dof)
         del self.state[dof.name]
+
+    def remove_degree_of_freedom(self, dof: DegreeOfFreedom) -> None:
+        if dof._world is self:
+            self._remove_degree_of_freedom(dof)
+        else:
+            logger.debug("Trying to remove an dof that is not part of this world.")
 
     def modify_world(self) -> WorldModelUpdateContextManager:
         return WorldModelUpdateContextManager(self)
@@ -477,8 +502,8 @@ class World:
         for model changes.
         """
         if not self.world_is_being_modified:
-            self.clear_all_lru_caches()
             self.compile_forward_kinematics_expressions()
+            self.clear_all_lru_caches()
             self.notify_state_change()
             self._model_version += 1
 
@@ -591,7 +616,9 @@ class World:
             ke.name for ke in self.kinematic_structure_entities
         ]:
             if not handle_duplicates:
-                raise DuplicateKinematicStructureEntityError([kinematic_structure_entity.name])
+                raise DuplicateKinematicStructureEntityError(
+                    [kinematic_structure_entity.name]
+                )
             kinematic_structure_entity.name.name = (
                 kinematic_structure_entity.name.name
                 + f"_{id_generator(kinematic_structure_entity)}"
@@ -872,20 +899,17 @@ class World:
         with self.modify_world():
             self_root = self.root
             other_root = other.root
-            for dof in other.degrees_of_freedom:
-                self.state[dof.name].position = other.state[dof.name].position
-                self.state[dof.name].velocity = other.state[dof.name].velocity
-                self.state[dof.name].acceleration = other.state[dof.name].acceleration
-                self.state[dof.name].jerk = other.state[dof.name].jerk
-                dof._world = self
-            self.degrees_of_freedom.extend(other.degrees_of_freedom)
-
-            # do not trigger computations in other
             with other.modify_world():
+                for dof in other.degrees_of_freedom.copy():
+                    other.remove_degree_of_freedom(dof)
+                    self.add_degree_of_freedom(dof)
                 for connection in other.connections:
                     other.remove_kinematic_structure_entity(connection.parent)
                     other.remove_kinematic_structure_entity(connection.child)
                     self.add_connection(connection, handle_duplicates=handle_duplicates)
+                else:
+                    other.remove_kinematic_structure_entity(other_root)
+                    self.add_kinematic_structure_entity(other_root)
                 for kinematic_structure_entity in other.kinematic_structure_entities:
                     if kinematic_structure_entity._world is not None:
                         other.remove_kinematic_structure_entity(
@@ -895,14 +919,16 @@ class World:
                 other_views = [view for view in other.views]
                 for view in other_views:
                     other.remove_view(view)
-                    self.add_view(view)
+                    self.add_view(view, exists_ok=handle_duplicates)
 
-            connection = root_connection or Connection6DoF(
-                parent=self_root, child=other_root, _world=self
-            )
-            for dof in connection.dofs:
-                self.add_degree_of_freedom(dof)
-            self.add_connection(connection, handle_duplicates=handle_duplicates)
+            connection = root_connection
+            if not connection and self_root:
+                connection = Connection6DoF(
+                    parent=self_root, child=other_root, _world=self
+                )
+
+            if connection:
+                self.add_connection(connection, handle_duplicates=handle_duplicates)
 
     def move_branch(
         self,
@@ -1477,7 +1503,9 @@ class World:
         :param tip: Tip KinematicStructureEntity to which the kinematics are computed.
         :return: Transformation matrix representing the relative pose of the tip KinematicStructureEntity with respect to the root KinematicStructureEntity.
         """
-        return cas.TransformationMatrix(self.compute_forward_kinematics_np(root, tip), reference_frame=root)
+        return cas.TransformationMatrix(
+            data=self.compute_forward_kinematics_np(root, tip), reference_frame=root
+        )
 
     def compute_forward_kinematics_np(
         self, root: KinematicStructureEntity, tip: KinematicStructureEntity
@@ -1503,9 +1531,9 @@ class World:
 
     def transform(
         self,
-        spatial_object: cas.SpatialType,
+        spatial_object: cas.GenericSpatialType,
         target_frame: KinematicStructureEntity,
-    ) -> cas.SpatialType:
+    ) -> cas.GenericSpatialType:
         """
         Transform a given spatial object from its reference frame to a target frame.
 
@@ -1614,11 +1642,19 @@ class World:
         dof_mapping = {}
         with new_world.modify_world():
             for body in self.bodies:
-                new_body = Body(visual=body.visual, collision=body.collision, name=body.name, )
+                new_body = Body(
+                    visual=body.visual,
+                    collision=body.collision,
+                    name=body.name,
+                )
                 new_world.add_kinematic_structure_entity(new_body)
                 body_mapping[body] = new_body
             for dof in self.degrees_of_freedom:
-                new_dof = DegreeOfFreedom(name=dof.name, lower_limits=dof.lower_limits, upper_limits=dof.upper_limits)
+                new_dof = DegreeOfFreedom(
+                    name=dof.name,
+                    lower_limits=dof.lower_limits,
+                    upper_limits=dof.upper_limits,
+                )
                 new_world.add_degree_of_freedom(new_dof)
                 dof_mapping[dof] = new_dof
             for connection in self.connections:
@@ -1742,7 +1778,9 @@ class World:
         """
         The complement of disabled_collision_pairs with respect to all possible body combinations with enabled collision.
         """
-        all_combinations = set(combinations_with_replacement(self.bodies_with_enabled_collision, 2))
+        all_combinations = set(
+            combinations_with_replacement(self.bodies_with_enabled_collision, 2)
+        )
         return all_combinations - self.disabled_collision_pairs
 
     def add_disabled_collision_pair(

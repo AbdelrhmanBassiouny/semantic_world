@@ -1,16 +1,14 @@
 ---
-jupyter:
-  jupytext:
-    default_lexer: ipython2
-    text_representation:
-      extension: .md
-      format_name: markdown
-      format_version: '1.3'
-      jupytext_version: 1.17.3
-  kernelspec:
-    display_name: Python 3
-    language: python
-    name: python3
+jupytext:
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.16.4
+kernelspec:
+  display_name: Python 3
+  language: python
+  name: python3
 ---
 
 (persistence-of-annotated-worlds)=
@@ -29,7 +27,7 @@ Let's go into an example where we create a world, store it, retrieve and reconst
 
 First, let's load a world from a URDF file.
 
-```python
+```{code-cell} ipython2
 import logging
 import os
 
@@ -55,7 +53,7 @@ world = URDFParser.from_file(table).parse()
 
 Next, we create a semantic annotation that describes the table.
 
-```python
+```{code-cell} ipython2
 table_view = Table([b for b in world.bodies if "top" in str(b.name)][0])
 world.add_view(table_view)
 print(table_view)
@@ -63,7 +61,7 @@ print(table_view)
 
 Now, let's store the world to a database. For that, we need to convert it to its data access object which than can be stored in the database.
 
-```python
+```{code-cell} ipython2
 dao = to_dao(world)
 session.add(dao)
 session.commit()
@@ -71,7 +69,7 @@ session.commit()
 
 We can now query the database about the world and reconstruct it to the original instance. As you can see the semantic annotations are also available and fully working.
 
-```python
+```{code-cell} ipython2
 queried_world = session.scalars(select(WorldMappingDAO)).one()
 reconstructed_world = queried_world.from_dao()
 table = [view for view in reconstructed_world.views if isinstance(view, Table)][0]

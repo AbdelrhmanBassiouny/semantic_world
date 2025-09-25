@@ -2,6 +2,7 @@ import os
 import threading
 import time
 
+from entity_query_language.symbolic import Variable
 from typing_extensions import Tuple
 
 import pytest
@@ -22,6 +23,7 @@ from .spatial_types import TransformationMatrix
 from .spatial_types.derivatives import DerivativeMap
 from .spatial_types.spatial_types import Vector3
 from .world import World
+from .world_description.shape_collection import ShapeCollection
 from .world_description.world_entity import KinematicStructureEntity, Body
 
 
@@ -79,29 +81,38 @@ def world_setup_simple():
     root = Body(name=PrefixedName(name="root", prefix="world"))
     body1 = Body(
         name=PrefixedName("name1", prefix="test"),
-        collision=[
-            Box(
-                origin=TransformationMatrix.from_xyz_rpy(),
-                scale=Scale(0.25, 0.25, 0.25),
-            )
-        ],
+        collision=ShapeCollection(
+            [
+                Box(
+                    origin=TransformationMatrix.from_xyz_rpy(),
+                    scale=Scale(0.25, 0.25, 0.25),
+                )
+            ]
+        ),
     )
     body2 = Body(
         name=PrefixedName("name2", prefix="test"),
-        collision=[
-            Box(
-                origin=TransformationMatrix.from_xyz_rpy(),
-                scale=Scale(0.25, 0.25, 0.25),
-            )
-        ],
+        collision=ShapeCollection(
+            [
+                Box(
+                    origin=TransformationMatrix.from_xyz_rpy(),
+                    scale=Scale(0.25, 0.25, 0.25),
+                )
+            ]
+        ),
     )
     body3 = Body(
         name=PrefixedName("name3", prefix="test"),
-        collision=[Sphere(origin=TransformationMatrix.from_xyz_rpy(), radius=0.01)],
+        collision=ShapeCollection(
+            [Sphere(origin=TransformationMatrix.from_xyz_rpy(), radius=0.01)]
+        ),
     )
+
     body4 = Body(
         name=PrefixedName("name4", prefix="test"),
-        collision=[Sphere(origin=TransformationMatrix.from_xyz_rpy(), radius=0.01)],
+        collision=ShapeCollection(
+            [Sphere(origin=TransformationMatrix.from_xyz_rpy(), radius=0.01)]
+        ),
     )
 
     with world.modify_world():
@@ -163,6 +174,21 @@ def pr2_world():
     return world
 
 
+@pytest.fixture
+def apartment_world() -> World:
+    """
+    Return the apartment world parsed from the URDF file.
+    """
+    urdf_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "..", "resources", "urdf"
+    )
+    apartment = os.path.join(urdf_dir, "apartment.urdf")
+    parser = URDFParser.from_file(file_path=apartment)
+    world = parser.parse()
+    world.validate()
+    return world
+
+
 @pytest.fixture(scope="function")
 def rclpy_node():
     if not rclpy_installed():
@@ -192,3 +218,24 @@ def rclpy_node():
 
         # Shut down the ROS client library
         rclpy.shutdown()
+
+
+@pytest.fixture(autouse=True, scope="function")
+def cleanup_after_test():
+    # Setup: runs before each test
+    yield
+    # Teardown: runs after each test
+    for c in Variable._cache_.values():
+        c.clear()
+    Variable._cache_.clear()
+
+
+@pytest.fixture()
+def kitchen_world():
+    path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "resources", "urdf", "kitchen-small.urdf"
+    )
+    parser = URDFParser.from_file(file_path=path)
+    world = parser.parse()
+    world.validate()
+    return world

@@ -1,15 +1,14 @@
 ---
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .md
-      format_name: markdown
-      format_version: '1.3'
-      jupytext_version: 1.17.3
-  kernelspec:
-    display_name: Python 3
-    language: python
-    name: python3
+jupytext:
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.16.4
+kernelspec:
+  display_name: Python 3
+  language: python
+  name: python3
 ---
 
 (world-structure-manipulation)=
@@ -31,7 +30,7 @@ Since the addition of a body to the world would, in most cases, violate the tree
 
 Let's create a simple world.
 
-```python
+```{code-cell} ipython2
 from semantic_world.world import World
 from semantic_world.world_description.world_entity import Body
 from semantic_world.world_description.degree_of_freedom import DegreeOfFreedom
@@ -41,6 +40,7 @@ from semantic_world.world_description.connections import (
 )
 from semantic_world.datastructures.prefixed_name import PrefixedName
 from semantic_world.spatial_types.spatial_types import Vector3
+from semantic_world.spatial_computations.raytracer import RayTracer
 
 world = World()
 
@@ -80,8 +80,7 @@ print(f"Number of DoFs after additions: {len(world.degrees_of_freedom)}")
 Now we want to remove the RevoluteConnection. This will also remove its DoF if no other connection uses it.
 To keep the world a connected tree, we also have to remove the now-disconnected child body in the same block.
 
-```python
-
+```{code-cell} ipython2
 with world.modify_world():
     world.remove_connection(c_base_link)
     world.remove_kinematic_structure_entity(link)
@@ -96,7 +95,7 @@ Another world structure manipulation is the addition/removal of a DoF.
 However, most DoFs are managed by connections and hence should not be mangled with directly.
 If you ever feel the need to manage a degree of freedom manually you can do it like this:
 
-```python
+```{code-cell} ipython2
 with world.modify_world():
     dof = DegreeOfFreedom(name=PrefixedName("my_dof"))
     world.add_degree_of_freedom(dof)

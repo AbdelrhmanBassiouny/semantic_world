@@ -3,13 +3,14 @@ from __future__ import annotations
 import abc
 from dataclasses import dataclass, field
 from itertools import chain
-from typing_extensions import Tuple, Set, List, Optional, Iterable
+from typing_extensions import Tuple, Set, List, Optional, Iterable, TYPE_CHECKING
 
 import numpy as np
 
 from ..world_description.connections import ActiveConnection
 from ..world_description.world_entity import Body
-from ..world import World
+if TYPE_CHECKING:
+    from ..world import World
 
 
 @dataclass

@@ -1,15 +1,14 @@
 ---
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .md
-      format_name: markdown
-      format_version: '1.3'
-      jupytext_version: 1.17.3
-  kernelspec:
-    display_name: Python 3
-    language: python
-    name: python3
+jupytext:
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.16.4
+kernelspec:
+  display_name: Python 3
+  language: python
+  name: python3
 ---
 
 (visualizing-worlds)=
@@ -57,3 +56,7 @@ rclpy.shutdown()
 ```
 
 The multiverse way relies on multiverse and is WIP. Do it faster giang.
+
+If you have followed the guide until here, you have probably noticed that we have used the RayTracer to visualize the world 
+a few times. This is a convenient way of visualizing a world inside a notebook, like in these guides, but it is not recommended 
+for normal usage.

@@ -49,8 +49,12 @@ def test_all_collisions(world_setup_simple):
     body4.parent_connection.origin = TransformationMatrix.from_xyz_rpy(10, 10, 10)
     body3.parent_connection.origin = TransformationMatrix.from_xyz_rpy(-10, -10, 10)
 
-    collisions = tcd.check_collisions([CollisionCheck(a,b, _world=world, distance=0.0001) for a, b in
-                                       itertools.combinations(world.bodies_with_enabled_collision, 2)])
+    collisions = tcd.check_collisions(
+        [
+            CollisionCheck(a, b, _world=world, distance=0.0001)
+            for a, b in itertools.combinations(world.bodies_with_enabled_collision, 2)
+        ]
+    )
     assert len(collisions) == 1
     assert collisions[0].body_a == body1
     assert collisions[0].body_b == body2

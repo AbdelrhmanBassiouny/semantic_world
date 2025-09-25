@@ -26,7 +26,7 @@ def drawer_factory_from_body(drawer: Body) -> DrawerFactory:
     )
     container_factory = ContainerFactory(
         name=PrefixedName(drawer.name.name + "_container", drawer.name.prefix),
-        scale=drawer.as_bounding_box_collection_at_origin(
+        scale=drawer.collision.as_bounding_box_collection_at_origin(
             TransformationMatrix(reference_frame=drawer._world.root)
         )
         .bounding_boxes[0]
@@ -48,13 +48,13 @@ def door_factory_from_body(door: Body) -> DoorFactory:
     scale and that a handle can be created with a standard size.
     """
     handle_factory = HandleFactory(
-        PrefixedName(door.name.name + "_handle", door.name.prefix),
-        Scale(0.05, 0.1, 0.02),
+        name=PrefixedName(door.name.name + "_handle", door.name.prefix),
+        scale=Scale(0.05, 0.1, 0.02),
     )
 
     door_factory = DoorFactory(
         name=door.name,
-        scale=door.as_bounding_box_collection_at_origin(
+        scale=door.collision.as_bounding_box_collection_at_origin(
             TransformationMatrix(reference_frame=door._world.root)
         )
         .bounding_boxes[0]
@@ -92,7 +92,7 @@ def dresser_factory_from_body(dresser: Body) -> DresserFactory:
 
     dresser_container_factory = ContainerFactory(
         name=PrefixedName(dresser.name.name + "_container", dresser.name.prefix),
-        scale=dresser.as_bounding_box_collection_at_origin(
+        scale=dresser.collision.as_bounding_box_collection_at_origin(
             TransformationMatrix(reference_frame=dresser._world.root)
         )
         .bounding_boxes[0]

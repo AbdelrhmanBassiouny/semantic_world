@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+
+import numpy as np
 from typing_extensions import Self, Dict, Any, TypeVar, TYPE_CHECKING
 
 from ormatic.dao import HasGeneric
@@ -16,8 +18,9 @@ from .connections import (
 )
 from .geometry import transformation_from_json, transformation_to_json
 from ..datastructures.prefixed_name import PrefixedName
+from ..spatial_types import RotationMatrix
 from ..spatial_types.spatial_types import TransformationMatrix
-from ..spatial_types.symbol_manager import symbol_manager
+from ..spatial_types.symbol_manager import symbol_manager, SymbolManager
 
 from .world_entity import Connection
 from .. import spatial_types as cas
@@ -140,9 +143,8 @@ class ActiveConnection1DOFFactory(ConnectionFactory[T]):
     def create(self, world: World) -> Connection:
         parent = world.get_kinematic_structure_entity_by_name(self.parent_name)
         child = world.get_kinematic_structure_entity_by_name(self.child_name)
-        # print(self.dof)
-        # world.add_degree_of_freedom(self.dof)
-        return self.original_class()(
+
+        connection =  self.original_class()(
             parent=parent,
             child=child,
             name=self.name,
@@ -153,6 +155,10 @@ class ActiveConnection1DOFFactory(ConnectionFactory[T]):
             origin_expression=self.origin_expression,
             _world=world,
         )
+        # The init of the  connection adds a new transformation to the origin expression but since this is already done \
+        # to this origin we just use it as is
+        connection.origin_expression = self.origin_expression
+        return connection
 
     def to_json(self) -> Dict[str, Any]:
         return {

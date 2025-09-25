@@ -9,16 +9,15 @@ from semantic_world.reasoning.predicates import (
     contact,
     robot_in_collision,
     visible,
-    above,
-    below,
-    left_of,
-    right_of,
-    behind,
-    in_front_of,
+    Above,
+    Below,
+    LeftOf,
+    RightOf,
+    Behind,
+    InFrontOf,
     is_body_in_region,
     occluding_bodies,
     is_supported_by,
-    _center_of_mass_in_world,
     is_body_in_gripper,
     robot_holds_body,
     reachable,
@@ -26,14 +25,15 @@ from semantic_world.reasoning.predicates import (
 )
 from semantic_world.robots import PR2, Camera, ParallelGripper
 from semantic_world.spatial_types.spatial_types import TransformationMatrix
-from semantic_world.testing import pr2_world
+from semantic_world.testing import *
 from semantic_world.world import World
 from semantic_world.world_description.connections import Connection6DoF, FixedConnection
 from semantic_world.world_description.geometry import Box, Scale, Color
+from semantic_world.world_description.shape_collection import ShapeCollection
 from semantic_world.world_description.world_entity import Body, Region
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def two_block_world():
     def make_body(name: str) -> Body:
         result = Body(name=PrefixedName(name))
@@ -41,7 +41,7 @@ def two_block_world():
             scale=Scale(1.0, 1.0, 1.0),
             origin=TransformationMatrix.from_xyz_rpy(reference_frame=result),
         )
-        result.collision = [collision]
+        result.collision = ShapeCollection([collision], reference_frame=result)
         return result
 
     world = World()
@@ -79,7 +79,7 @@ def test_in_contact():
         ),
         color=Color(1.0, 0.0, 0.0),
     )
-    b1.collision = [collision1]
+    b1.collision = ShapeCollection([collision1])
 
     b2 = Body(name=PrefixedName("b2"))
     collision2 = Box(
@@ -89,7 +89,7 @@ def test_in_contact():
         ),
         color=Color(0.0, 1.0, 0.0),
     )
-    b2.collision = [collision2]
+    b2.collision = ShapeCollection([collision2])
 
     b3 = Body(name=PrefixedName("b3"))
     collision3 = Box(
@@ -99,7 +99,7 @@ def test_in_contact():
         ),
         color=Color(0.0, 0.0, 1.0),
     )
-    b3.collision = [collision3]
+    b3.collision = ShapeCollection([collision3])
 
     with w.modify_world():
         w.add_kinematic_structure_entity(b1)
@@ -124,7 +124,7 @@ def test_robot_in_contact(pr2_world: World):
         ),
         color=Color(1.0, 0.0, 0.0),
     )
-    body.collision = [collision1]
+    body.collision = ShapeCollection([collision1])
 
     with pr2_world.modify_world():
         pr2_world.add_connection(Connection6DoF(pr2_world.root, body, _world=pr2_world))
@@ -152,7 +152,7 @@ def test_get_visible_objects(pr2_world: World):
         ),
         color=Color(1.0, 0.0, 0.0),
     )
-    body.collision = [collision1]
+    body.collision = ShapeCollection([collision1])
 
     with pr2_world.modify_world():
         pr2_world.add_connection(Connection6DoF(pr2_world.root, body, _world=pr2_world))
@@ -171,7 +171,7 @@ def test_occluding_bodies(pr2_world: World):
             scale=Scale(1.0, 1.0, 1.0),
             origin=TransformationMatrix.from_xyz_rpy(reference_frame=result),
         )
-        result.collision = [collision]
+        result.collision = ShapeCollection([collision])
         return result
 
     obstacle = make_body("obstacle")
@@ -210,40 +210,40 @@ def test_above_and_below(two_block_world):
     center, top = two_block_world
 
     pov = TransformationMatrix.from_xyz_rpy(x=-3)
-    assert above(top, center, pov)
-    assert below(center, top, pov)
+    assert Above(top, center, pov)()
+    assert Below(center, top, pov)()
 
     pov = TransformationMatrix.from_xyz_rpy(x=3, yaw=np.pi)
-    assert above(top, center, pov)
-    assert below(center, top, pov)
+    assert Above(top, center, pov)()
+    assert Below(center, top, pov)()
 
     pov = TransformationMatrix.from_xyz_rpy(x=3, roll=np.pi)
-    assert above(center, top, pov)
-    assert below(top, center, pov)
+    assert Above(center, top, pov)()
+    assert Below(top, center, pov)()
 
 
 def test_left_and_right(two_block_world):
     center, top = two_block_world
 
     pov = TransformationMatrix.from_xyz_rpy(x=3, roll=np.pi / 2)
-    assert left_of(top, center, pov)
-    assert right_of(center, top, pov)
+    assert LeftOf(top, center, pov)()
+    assert RightOf(center, top, pov)()
 
     pov = TransformationMatrix.from_xyz_rpy(x=3, roll=-np.pi / 2)
-    assert right_of(top, center, pov)
-    assert left_of(center, top, pov)
+    assert RightOf(top, center, pov)()
+    assert LeftOf(center, top, pov)()
 
 
 def test_behind_and_in_front_of(two_block_world):
     center, top = two_block_world
 
     pov = TransformationMatrix.from_xyz_rpy(z=-5, pitch=np.pi / 2)
-    assert behind(top, center, pov)
-    assert in_front_of(center, top, pov)
+    assert Behind(top, center, pov)()
+    assert InFrontOf(center, top, pov)()
 
     pov = TransformationMatrix.from_xyz_rpy(z=5, pitch=-np.pi / 2)
-    assert in_front_of(top, center, pov)
-    assert behind(center, top, pov)
+    assert InFrontOf(top, center, pov)()
+    assert Behind(center, top, pov)()
 
 
 def test_body_in_region(two_block_world):
@@ -253,7 +253,7 @@ def test_body_in_region(two_block_world):
         scale=Scale(1.0, 1.0, 1.0),
         origin=TransformationMatrix.from_xyz_rpy(reference_frame=region),
     )
-    region.area = [region_box]
+    region.area = ShapeCollection([region_box])
 
     with center._world.modify_world():
         connection = FixedConnection(
@@ -289,7 +289,7 @@ def test_is_body_in_gripper(
 
     left_gripper = (
         gripper[0]
-        if left_of(gripper[0].root, gripper[1].root, pr2.root.global_pose)
+        if LeftOf(gripper[0].root, gripper[1].root, pr2.root.global_pose)()
         else gripper[1]
     )
 
@@ -300,11 +300,15 @@ def test_is_body_in_gripper(
         origin=TransformationMatrix.from_xyz_rpy(reference_frame=test_box),
         color=Color(1.0, 0.0, 0.0),
     )
-    test_box.collision = [box_collision]
+    test_box.collision = ShapeCollection([box_collision])
 
     # Calculate position between fingers
-    finger1_pos = _center_of_mass_in_world(left_gripper.finger.tip)
-    finger2_pos = _center_of_mass_in_world(left_gripper.thumb.tip)
+    finger1_pos = (
+        left_gripper.finger.tip.collision.center_of_mass_in_world().to_vector3()
+    )
+    finger2_pos = (
+        left_gripper.thumb.tip.collision.center_of_mass_in_world().to_vector3()
+    )
     between_fingers = (finger1_pos + finger2_pos) / 2.0
 
     # Add box to world
@@ -391,7 +395,7 @@ def test_blocking(pr2_world):
         scale=Scale(3.0, 1.0, 1.0),
         origin=TransformationMatrix.from_xyz_rpy(x=1.0, z=0.5),
     )
-    obstacle.collision = [collision]
+    obstacle.collision = ShapeCollection([collision])
 
     with pr2_world.modify_world():
         new_root = Body(name=PrefixedName("new_root"))

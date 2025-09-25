@@ -52,9 +52,27 @@ class TestFactories(unittest.TestCase):
         self.assertIsInstance(door.handle, Handle)
 
     def test_double_door_factory(self):
+        door_factory = DoorFactory(
+            name=PrefixedName("door"),
+            handle_factory=HandleFactory(name=PrefixedName("handle")),
+            handle_direction=Direction.Y,
+        )
+        door_transform = TransformationMatrix.from_xyz_rpy(y=-0.5)
+
+        door_factory2 = DoorFactory(
+            name=PrefixedName("door2"),
+            handle_factory=HandleFactory(name=PrefixedName("handle2")),
+            handle_direction=Direction.NEGATIVE_Y,
+        )
+        door_transform2 = TransformationMatrix.from_xyz_rpy(y=0.5)
+
+        door_factories = [door_factory, door_factory2]
+        door_transforms = [door_transform, door_transform2]
+
         factory = DoubleDoorFactory(
             name=PrefixedName("double_door"),
-            handle_factory=HandleFactory(name=PrefixedName("handle")),
+            door_factories=door_factories,
+            door_transforms=door_transforms,
         )
         world = factory.create()
         door_views = world.get_views_by_type(Door)
@@ -136,20 +154,37 @@ class TestFactories(unittest.TestCase):
             handle_factory=HandleFactory(name=PrefixedName("handle")),
             handle_direction=Direction.Y,
         )
+        door_transform = TransformationMatrix.from_xyz_rpy(y=-0.5)
 
-        door_transform = TransformationMatrix()
+        door_factory2 = DoorFactory(
+            name=PrefixedName("door2"),
+            handle_factory=HandleFactory(name=PrefixedName("handle2")),
+            handle_direction=Direction.NEGATIVE_Y,
+        )
+        door_transform2 = TransformationMatrix.from_xyz_rpy(y=0.5)
+
+        door_factories = [door_factory, door_factory2]
+        door_transforms = [door_transform, door_transform2]
 
         double_door_factory = DoubleDoorFactory(
             name=PrefixedName("double_door"),
-            handle_factory=HandleFactory(name=PrefixedName("handle")),
+            door_factories=door_factories,
+            door_transforms=door_transforms,
         )
         double_door_transform = TransformationMatrix()
+
+        single_door_factory = DoorFactory(
+            name=PrefixedName("single_door"),
+            handle_factory=HandleFactory(name=PrefixedName("single_door_handle")),
+            handle_direction=Direction.Y,
+        )
+        single_door_transform = TransformationMatrix.from_xyz_rpy(y=-1.5)
 
         factory = WallFactory(
             name=PrefixedName("wall"),
             scale=Scale(0.1, 4, 2),
-            door_transforms=[door_transform, double_door_transform],
-            door_factories=[door_factory, double_door_factory],
+            door_transforms=[single_door_transform, double_door_transform],
+            door_factories=[single_door_factory, double_door_factory],
         )
         world = factory.create()
         wall_views = world.get_views_by_type(Wall)

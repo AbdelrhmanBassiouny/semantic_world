@@ -1,9 +1,12 @@
 from dataclasses import dataclass
+
+from entity_query_language import symbol
 from typing_extensions import Optional, Dict, Any, Self
 
 from random_events.utils import SubclassJSONSerializer
 
 
+@symbol
 @dataclass
 class PrefixedName(SubclassJSONSerializer):
     name: str

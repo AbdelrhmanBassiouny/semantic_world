@@ -16,6 +16,7 @@ from semantic_world.adapters.procthor.procthor_parser import (
     ProcthorObject,
 )
 from semantic_world.spatial_types.spatial_types import TransformationMatrix
+from semantic_world.utils import get_semantic_world_directory_root
 from semantic_world.world_description.geometry import Scale
 from semantic_world.world_description.world_entity import Region
 
@@ -38,24 +39,28 @@ class ProcTHORTestCase(unittest.TestCase):
 
     def test_unity_to_semantic_digital_twin_transform_identity_matrix(self):
         m = np.eye(4)
-        result = unity_to_semantic_digital_twin_transform(TransformationMatrix(m))
+        result = unity_to_semantic_digital_twin_transform(TransformationMatrix(data=m))
         np.testing.assert_allclose(result.to_np(), np.eye(4), rtol=1e-6, atol=1e-6)
 
     def test_unity_to_semantic_digital_twin_transform_translation_along_x(self):
         """Unity +X should map to semantic –Y (because of reflection)."""
         m = np.eye(4)
         m[0, 3] = 1.0
-        result = unity_to_semantic_digital_twin_transform(TransformationMatrix(m))
+        result = unity_to_semantic_digital_twin_transform(TransformationMatrix(data=m))
         self.assertAlmostEqual(result.to_position().to_np()[1], -1.0)
-        np.testing.assert_allclose(result.to_rotation().to_np()[:3, :3], np.eye(3))
+        np.testing.assert_allclose(
+            result.to_rotation_matrix().to_np()[:3, :3], np.eye(3)
+        )
 
     def test_unity_to_semantic_digital_twin_transform_translation_along_z(self):
         """Unity +Z should map to semantic +X."""
         m = np.eye(4)
         m[2, 3] = 2.0
-        result = unity_to_semantic_digital_twin_transform(TransformationMatrix(m))
+        result = unity_to_semantic_digital_twin_transform(TransformationMatrix(data=m))
         self.assertAlmostEqual(result.to_position().to_np()[0], 2.0, places=6)
-        np.testing.assert_allclose(result.to_rotation().to_np()[:3, :3], np.eye(3))
+        np.testing.assert_allclose(
+            result.to_rotation_matrix().to_np()[:3, :3], np.eye(3)
+        )
 
     def test_unity_to_semantic_digital_twin_transform_rotation_y_90_degrees(self):
         """Unity +90° about Y should become –90° about Z in semantic frame."""
@@ -68,7 +73,7 @@ class ProcTHORTestCase(unittest.TestCase):
                 [-np.sin(theta), 0, np.cos(theta)],
             ]
         )
-        result = unity_to_semantic_digital_twin_transform(TransformationMatrix(m))
+        result = unity_to_semantic_digital_twin_transform(TransformationMatrix(data=m))
 
         expected = np.eye(4)
         expected[:3, :3] = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
@@ -86,7 +91,7 @@ class ProcTHORTestCase(unittest.TestCase):
         room = self.house_json["rooms"][0]
         procthor_room = ProcthorRoom(room_dict=room)
         np.testing.assert_array_equal(
-            procthor_room.world_T_room.to_rotation().to_np(), np.eye(4)
+            procthor_room.world_T_room.to_rotation_matrix().to_np(), np.eye(4)
         )
         np.testing.assert_array_equal(
             procthor_room.world_T_room.to_translation().to_np()[:3, 3],
@@ -159,8 +164,9 @@ class ProcTHORTestCase(unittest.TestCase):
         door_factory = procthor_door.get_factory()
 
         self.assertEqual(door_factory.name.name, "Doorway_Double_7_room1_room4")
-        self.assertEqual(door_factory.scale, Scale(0.03, 2.0, 2.1))
-        self.assertEqual(door_factory.one_door_scale, Scale(0.03, 1.0, 2.1))
+        self.assertEqual(len(door_factory.door_factories), 2)
+        self.assertEqual(len(door_factory.door_transforms), 2)
+        self.assertEqual(door_factory.door_factories[0].scale, Scale(0.03, 1.0, 2.1))
 
     def test_wall_creation(self):
         parser = ProcTHORParser(self.file_path, None)
@@ -279,6 +285,16 @@ class ProcTHORTestCase(unittest.TestCase):
         world = procthor_object.get_world()
 
         ...
+
+    def test_parse_full_world(self):
+        world = ProcTHORParser(
+            os.path.join(
+                get_semantic_world_directory_root(os.getcwd()),
+                "resources",
+                "procthor_json",
+                "house_987654321.json",
+            )
+        ).parse()
 
 
 if __name__ == "__main__":
