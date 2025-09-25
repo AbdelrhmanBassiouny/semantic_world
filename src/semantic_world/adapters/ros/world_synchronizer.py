@@ -6,13 +6,20 @@ from functools import cached_property
 from typing import ClassVar
 
 import numpy as np
-import rclpy  # type: ignore
+try:
+    import rclpy  # type: ignore
+    from rclpy.node import Node as RosNode
+    from rclpy.publisher import Publisher
+    from rclpy.subscription import Subscription
+except ImportError:
+    rclpy = None
+    RosNode = None
+    Publisher = None
+    Subscription = None
 import std_msgs.msg
 from ormatic.dao import to_dao
 from random_events.utils import SubclassJSONSerializer
-from rclpy.node import Node as RosNode
-from rclpy.publisher import Publisher
-from rclpy.subscription import Subscription
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 

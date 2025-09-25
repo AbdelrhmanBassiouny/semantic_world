@@ -4,7 +4,7 @@ import itertools
 import logging
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Dict, Any, Self, Optional, List, Iterator
+from typing_extensions import Dict, Any, Self, Optional, List, Iterator
 
 import numpy as np
 from random_events.product_algebra import Event, SimpleEvent

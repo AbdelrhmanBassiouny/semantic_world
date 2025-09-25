@@ -401,7 +401,7 @@ class ProcthorRoom:
         ]
 
         room_id = self.room_dict["id"].split("|")[-1]
-        self.name = PrefixedName(f"{self.room_dict["roomType"]}_{room_id}")
+        self.name = PrefixedName(f"{self.room_dict['roomType']}_{room_id}")
 
     @cached_property
     def world_T_room(self) -> TransformationMatrix:

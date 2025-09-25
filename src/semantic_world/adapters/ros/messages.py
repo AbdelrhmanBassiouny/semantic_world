@@ -1,7 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Dict, Any, Self, List
+from typing_extensions import Dict, Any, Self, List
 
 from random_events.utils import SubclassJSONSerializer
 

@@ -2,7 +2,10 @@ import threading
 
 import numpy as np
 import pytest
-import rclpy
+try:
+    import rclpy
+except ImportError:
+    rclpy = None
 
 from semantic_world.datastructures.prefixed_name import PrefixedName
 from semantic_world.reasoning.predicates import (
