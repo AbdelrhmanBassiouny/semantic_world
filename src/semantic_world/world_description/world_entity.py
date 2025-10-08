@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import itertools
 from abc import ABC
 from collections import deque
 from collections.abc import Iterable, Mapping
@@ -9,6 +8,7 @@ from dataclasses import dataclass, field
 from dataclasses import fields
 from functools import lru_cache
 
+import itertools
 import numpy as np
 import trimesh
 import trimesh.boolean
@@ -641,16 +641,36 @@ class Connection(WorldEntity):
     The child KinematicStructureEntity of the connection.
     """
 
-    origin_expression: TransformationMatrix = field(default=None)
+    parent_T_connection_expression: TransformationMatrix = field(
+        default_factory=TransformationMatrix
+    )
+    connection_T_child_expression: TransformationMatrix = field(
+        default_factory=TransformationMatrix
+    )
     """
-    A symbolic expression describing the origin of the connection.
+    The origin expression of a connection is split into 2 transforms:
+    1. parent_T_connection describes the pose of the connection and is always constant.
+       It typically describes the fixed part of the origin expression, equivalent to the origin tag in urdf. 
+       For example, it is the point about which a revolute joint rotates.
+    2. connection_T_child describes the pose of the child relative to the connection.
+       This typically contains only the expressions that describe how the degrees of freedom move the child.
+       For example, it describes how the angle of a revolute joint affects the child pose.
+
+    This split is necessary for copying Connections, because they need parent_T_connection as an input parameter and 
+    connection_T_child is generated in the __post_init__ method.
     """
 
+    @property
+    def origin_expression(self) -> TransformationMatrix:
+        return self.parent_T_connection_expression @ self.connection_T_child_expression
+
+    def add_to_world(self, world: World):
+        self._world = world
+
     def __post_init__(self):
-        if self.origin_expression is None:
-            self.origin_expression = TransformationMatrix()
-        self.origin_expression.reference_frame = self.parent
-        self.origin_expression.child_frame = self.child
+        self.parent_T_connection_expression.reference_frame = self.parent
+        self.connection_T_child_expression.child_frame = self.child
+
         if self.name is None:
             self.name = PrefixedName(
                 f"{self.parent.name.name}_T_{self.child.name.name}",

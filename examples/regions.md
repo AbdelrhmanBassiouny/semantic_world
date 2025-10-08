@@ -68,7 +68,7 @@ with world.modify_world():
     leg_to_top = FixedConnection(
         parent=table_leg,
         child=table_top,
-        origin_expression=TransformationMatrix.from_xyz_rpy(
+        parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
             z=0.3, reference_frame=table_leg
         ),
         _world=world,

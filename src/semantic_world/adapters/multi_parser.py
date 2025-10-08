@@ -171,7 +171,9 @@ class MultiParser:
                 point=point_expr, rotation_matrix=quaternion_expr.to_rotation_matrix()
             )
             connection = FixedConnection(
-                parent=parent_body, child=child_body, origin_expression=origin
+                parent=parent_body,
+                child=child_body,
+                parent_T_connection_expression=origin,
             )
             connections.append(connection)
 
@@ -211,7 +213,9 @@ class MultiParser:
             raise NotImplementedError("Free joints are not supported yet.")
         elif joint_builder.type == JointType.FIXED:
             return FixedConnection(
-                parent=parent_body, child=child_body, origin_expression=origin
+                parent=parent_body,
+                child=child_body,
+                parent_T_connection_expression=origin,
             )
         elif joint_builder.type in [
             JointType.REVOLUTE,
@@ -251,7 +255,7 @@ class MultiParser:
                 connection = RevoluteConnection(
                     parent=parent_body,
                     child=child_body,
-                    origin_expression=origin,
+                    parent_T_connection_expression=origin,
                     multiplier=multiplier,
                     offset=offset,
                     axis=axis,
@@ -261,7 +265,7 @@ class MultiParser:
                 connection = PrismaticConnection(
                     parent=parent_body,
                     child=child_body,
-                    origin_expression=origin,
+                    parent_T_connection_expression=origin,
                     multiplier=multiplier,
                     offset=offset,
                     axis=axis,

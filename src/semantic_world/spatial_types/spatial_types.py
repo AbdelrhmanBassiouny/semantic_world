@@ -35,7 +35,7 @@ from scipy import sparse as sp
 from ..exceptions import HasFreeSymbolsError, NotSquareMatrixError, WrongDimensionsError
 
 if TYPE_CHECKING:
-    from ..world_description.world_entity import KinematicStructureEntity
+    from ..world_description.world_entity import KinematicStructureEntity, Connection
 
 EPS: float = sys.float_info.epsilon * 4.0
 
@@ -1754,7 +1754,7 @@ class ReferenceFrameMixin:
 
     """
 
-    reference_frame: Optional[KinematicStructureEntity] = field(
+    reference_frame: Optional[KinematicStructureEntity | Connection] = field(
         kw_only=True, default=None
     )
     """
@@ -1776,7 +1776,7 @@ class TransformationMatrix(SymbolicType, ReferenceFrameMixin, MatrixOperationsMi
 
     child_frame: Optional[KinematicStructureEntity] = field(kw_only=True, default=None)
     """
-    child_frame: Optional[KinematicStructureEntity]
+    child_frame of this transformation matrix.
     """
 
     data: InitVar[Optional[Matrix2dData]] = None
@@ -1916,6 +1916,43 @@ class TransformationMatrix(SymbolicType, ReferenceFrameMixin, MatrixOperationsMi
         )
         return cls.from_point_rotation_matrix(
             p, r, reference_frame=reference_frame, child_frame=child_frame
+        )
+
+    @classmethod
+    def from_xyz_axis_angle(
+        cls,
+        x: ScalarData = 0,
+        y: ScalarData = 0,
+        z: ScalarData = 0,
+        axis: Vector3 | NumericalArray = None,
+        angle: ScalarData = 0,
+        reference_frame: Optional[KinematicStructureEntity] = None,
+        child_frame: Optional[KinematicStructureEntity] = None,
+    ) -> Self:
+        """
+        Creates an instance of the class from x, y, z coordinates, axis and angle.
+
+        This class method generates an object using provided spatial coordinates and a
+        rotation defined by an axis and angle. The resulting object is defined with
+        a specified reference frame and child frame.
+
+        :param x: Initial x-coordinate.
+        :param y: Initial y-coordinate.
+        :param z: Initial z-coordinate.
+        :param axis: Vector defining the axis of rotation. Defaults to Vector3(0, 0, 1) if not specified.
+        :param angle: Angle of rotation around the specified axis, in radians.
+        :param reference_frame: Reference frame entity to be associated with the object.
+        :param child_frame: Child frame entity associated with the object.
+        :return: An instance of the class with the specified transformations applied.
+        """
+        axis = axis or Vector3(0, 0, 1)
+        rotation_matrix = RotationMatrix.from_axis_angle(axis=axis, angle=angle)
+        point = Point3(x_init=x, y_init=y, z_init=z)
+        return cls.from_point_rotation_matrix(
+            point=point,
+            rotation_matrix=rotation_matrix,
+            reference_frame=reference_frame,
+            child_frame=child_frame,
         )
 
     @property

@@ -419,19 +419,34 @@ def test_merge_with_connection(world_setup, pr2_world):
 
     origin = TransformationMatrix(pose)
 
-    new_connection = FixedConnection(
-        parent=world.root, child=pr2_world.root, origin_expression=origin, _world=world
-    )
-    world.merge_world(pr2_world, new_connection)
+    connection = pr2_world.get_connection_by_name("l_gripper_l_finger_joint")
+    pr2_world.state[connection.dof.name].position = 0.55
+    pr2_world.notify_state_change()
+    expected_fk = pr2_world.compute_forward_kinematics(
+        connection.parent, connection.child
+    ).to_np()
 
+    new_connection = FixedConnection(
+        parent=world.root,
+        child=pr2_world.root,
+        parent_T_connection_expression=origin,
+        _world=world,
+    )
+
+    world.merge_world(pr2_world, new_connection)
     assert base_link in world.kinematic_structure_entities
     assert r_gripper_tool_frame in world.kinematic_structure_entities
     assert new_connection in world.connections
     assert torso_lift_link._world == world
     assert r_shoulder_pan_joint._world == world
+    assert world.state[connection.dof.name].position == 0.55
     assert world.compute_forward_kinematics_np(world.root, base_link)[
         0, 3
     ] == pytest.approx(1.0, abs=1e-6)
+    actual_fk = world.compute_forward_kinematics(
+        connection.parent, connection.child
+    ).to_np()
+    assert np.allclose(actual_fk, expected_fk)
 
 
 def test_merge_with_pose(world_setup, pr2_world):
@@ -599,7 +614,9 @@ def test_copy_pr2_world_connection_origin(pr2_world):
     for body in pr2_world.bodies:
         pr2_body = pr2_world.get_kinematic_structure_entity_by_name(body.name)
         pr2_copy_body = pr2_copy.get_kinematic_structure_entity_by_name(body.name)
-        np.testing.assert_array_almost_equal(pr2_body.global_pose.to_np(), pr2_copy_body.global_pose.to_np())
+        np.testing.assert_array_almost_equal(
+            pr2_body.global_pose.to_np(), pr2_copy_body.global_pose.to_np()
+        )
 
 
 def test_world_different_entities(world_setup):
@@ -613,9 +630,6 @@ def test_world_different_entities(world_setup):
         assert dof not in world.degrees_of_freedom
 
 
-@unittest.skip(
-    "This test still fails because the origin of connections cannot be deepcopied properly."
-)
 def test_copy_pr2(pr2_world):
     pr2_world.state[
         pr2_world.get_degree_of_freedom_by_name("torso_lift_joint").name

@@ -46,6 +46,8 @@ class WorldModelModification(SubclassJSONSerializer, ABC):
     """
     A record of a modification to the model (structure) of the world.
     This includes add/remove body and add/remove connection.
+
+    All modifications are compared via the names of the objects they reference.
     """
 
     @abstractmethod
@@ -95,6 +97,12 @@ class AddKinematicStructureEntityModification(WorldModelModification):
             kinematic_structure_entity=KinematicStructureEntity.from_json(data["body"])
         )
 
+    def __eq__(self, other: Any) -> bool:
+        return (
+            self.kinematic_structure_entity.name
+            == other.kinematic_structure_entity.name
+        )
+
 
 @dataclass
 class RemoveBodyModification(WorldModelModification):
@@ -140,8 +148,7 @@ class AddConnectionModification(WorldModelModification):
         return cls(ConnectionFactory.from_connection(kwargs["connection"]))
 
     def apply(self, world: World):
-        connection = self.connection_factory.create(world)
-        world.add_connection(connection)
+        self.connection_factory.create(world)
 
     def to_json(self):
         return {
@@ -153,6 +160,12 @@ class AddConnectionModification(WorldModelModification):
     def _from_json(cls, data: Dict[str, Any]) -> Self:
         return cls(
             connection_factory=ConnectionFactory.from_json(data["connection_factory"])
+        )
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, AddConnectionModification)
+            and self.connection_factory.name == other.connection_factory.name
         )
 
 
@@ -212,6 +225,9 @@ class AddDegreeOfFreedomModification(WorldModelModification):
     @classmethod
     def _from_json(cls, data: Dict[str, Any]) -> Self:
         return cls(dof=DegreeOfFreedom.from_json(data["dof"]))
+
+    def __eq__(self, other):
+        return self.dof.name == other.dof.name
 
 
 @dataclass

@@ -72,7 +72,7 @@ shell. Maybe you see a mistake and not all the currently detected drawers are ac
 results. To start writing your rule, just type `%edit` in the Ipython terminal as shown the image bellow, or if using
 the GUI just press the `Edit` button.
 
-```{figure} images/write_edit_in_ipython.png
+```{figure} _static/images/write_edit_in_ipython.png
 ---
 width: 800px
 ---
@@ -125,7 +125,7 @@ So the above is the generated template, and I just filled in the body of the fun
 you write `%load` in the Ipython and the function you just wrote will be available to you to test it out in the Ipython
 shell as shown bellow (in the GUI just pres the Load button):
 
-```{figure} images/load_rule_and_test_it.png
+```{figure} _static/images/load_rule_and_test_it.png
 ---
 width: 1600px
 ---
@@ -135,7 +135,7 @@ Load the written Rule into the Ipython Shell.
 Then if you want to change the rule, just edit the already open template file and do `load` again. Once you are happy
 with your rule results just return the function output as follows (in the GUI just press the Accept button):
 
-```{figure} images/accept_rule.png
+```{figure} _static/images/accept_rule.png
 ---
 width: 600px
 ---

@@ -1,9 +1,21 @@
-# Overview
+(user-guide)=
+# User Guide
 
 ## Prerequisites
 You’ll need to know a bit of Python. For a refresher, see the [Python tutorial](https://docs.python.org/3/tutorial/).
 
 To work with the examples, you'll additionally need ROS2 installed.
+
+The examples are meant to be run from a clone of this repository.
+If you encounter paths not working in your environment, 
+make sure to use paths with respect to your custom setup.
+
+If you want to convert the examples to Jupyter notebooks, you can use
+```bash
+pip install jupytext
+cd semantic_world/examples
+jupytext --to notebook *.md
+```
 
 ## Learning Objectives
 

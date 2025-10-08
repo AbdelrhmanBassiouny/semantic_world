@@ -23,7 +23,7 @@ This kinematic structure has to be a tree.
 The world structure is commonly manipulated in three ways:
 - Adding/Removing a body
 - Adding/Removing a connection
-- Adding/Removing a region, which is discussed in (TODO link).
+- Adding/Removing a region, which is discussed in [](regions).
 
 Since the addition of a body to the world would, in most cases, violate the tree constraint, changes to the world structure have to be grouped in one
 `with world.modify_world()` block. This context manager ensures that at the exit of such a block, the world is valid.

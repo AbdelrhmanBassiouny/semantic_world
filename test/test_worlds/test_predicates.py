@@ -57,7 +57,7 @@ def two_block_world():
             parent=body_1,
             child=body_2,
             _world=world,
-            origin_expression=TransformationMatrix.from_xyz_rpy(
+            parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
                 z=3, reference_frame=body_1
             ),
         )
@@ -186,7 +186,7 @@ def test_occluding_bodies(pr2_world: World):
             parent=root,
             child=obstacle,
             _world=pr2_world,
-            origin_expression=TransformationMatrix.from_xyz_rpy(
+            parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
                 reference_frame=root, x=3, z=0.8
             ),
         )
@@ -194,7 +194,7 @@ def test_occluding_bodies(pr2_world: World):
             parent=root,
             child=occluded_body,
             _world=pr2_world,
-            origin_expression=TransformationMatrix.from_xyz_rpy(
+            parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
                 reference_frame=root, x=10, z=0.5
             ),
         )
@@ -263,7 +263,7 @@ def test_body_in_region(two_block_world):
             parent=center,
             child=region,
             _world=center._world,
-            origin_expression=TransformationMatrix.from_xyz_rpy(
+            parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
                 z=0.5, reference_frame=center
             ),
         )
@@ -276,8 +276,8 @@ def test_supporting(two_block_world):
     center, top = two_block_world
 
     with center._world.modify_world():
-        top.parent_connection.origin_expression = TransformationMatrix.from_xyz_rpy(
-            reference_frame=center, z=1.0
+        top.parent_connection.parent_T_connection_expression = (
+            TransformationMatrix.from_xyz_rpy(reference_frame=center, z=1.0)
         )
     assert is_supported_by(top, center)
     assert not is_supported_by(center, top)

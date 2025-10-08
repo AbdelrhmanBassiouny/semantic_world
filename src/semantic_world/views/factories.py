@@ -126,7 +126,7 @@ class HasDoorFactories(ABC):
             connection = RevoluteConnection(
                 parent=parent_world.root,
                 child=root,
-                origin_expression=pivot_point,
+                parent_T_connection_expression=pivot_point,
                 multiplier=1.0,
                 offset=0.0,
                 axis=Vector3.Z(),
@@ -264,7 +264,7 @@ class HasHandleFactory(ABC):
         connection = FixedConnection(
             parent=parent_world.root,
             child=handle_world.root,
-            origin_expression=parent_T_handle,
+            parent_T_connection_expression=parent_T_handle,
         )
 
         parent_world.merge_world(handle_world, connection)
@@ -307,7 +307,7 @@ class HasDrawerFactories(ABC):
         connection = PrismaticConnection(
             parent=parent_world.root,
             child=root,
-            origin_expression=parent_T_drawer,
+            parent_T_connection_expression=parent_T_drawer,
             multiplier=1.0,
             offset=0.0,
             axis=Vector3.X(),
@@ -867,7 +867,7 @@ class RoomFactory(ViewFactory[Room]):
         connection = FixedConnection(
             parent=room_body,
             child=region,
-            origin_expression=TransformationMatrix(),
+            parent_T_connection_expression=TransformationMatrix(),
         )
         world.add_connection(connection)
 
@@ -997,7 +997,7 @@ class WallFactory(ViewFactory[Wall], HasDoorFactories):
             connection = FixedConnection(
                 parent=temp_world.root,
                 child=door_world.root,
-                origin_expression=door_transform,
+                parent_T_connection_expression=door_transform,
             )
 
             temp_world.merge_world(door_world, connection)
@@ -1022,7 +1022,7 @@ class WallFactory(ViewFactory[Wall], HasDoorFactories):
                     connection = FixedConnection(
                         parent=wall_world.root,
                         child=door_world.root,
-                        origin_expression=transform,
+                        parent_T_connection_expression=transform,
                     )
 
                     wall_world.merge_world(door_world, connection)

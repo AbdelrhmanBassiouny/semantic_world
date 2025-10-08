@@ -93,7 +93,11 @@ class WorldState(MutableMapping):
         idx = self._index[name]
         return WorldStateView(self.data[:, idx])
 
-    def __setitem__(self, name: PrefixedName, value: np.ndarray) -> None:
+    def __setitem__(
+        self, name: PrefixedName, value: np.ndarray | WorldStateView
+    ) -> None:
+        if isinstance(value, WorldStateView):
+            value = value.data
         arr = np.asarray(value, dtype=float)
         if arr.shape != (4,):
             raise ValueError(

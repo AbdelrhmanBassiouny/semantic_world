@@ -204,7 +204,7 @@ class FBXParser(MeshParser):
                         parent=parent_body,
                         child=obj_body,
                         _world=world,
-                        origin_expression=parent_T_child,
+                        parent_T_connection_expression=parent_T_child,
                     )
                     world.add_connection(connection)
 

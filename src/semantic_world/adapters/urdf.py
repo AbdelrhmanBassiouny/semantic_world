@@ -200,7 +200,7 @@ class URDFParser:
         translation_offset = getattr(joint.origin, "xyz", [0, 0, 0])
         rotation_offset = getattr(joint.origin, "rpy", [0, 0, 0])
 
-        parent_T_child = cas.TransformationMatrix.from_xyz_rpy(
+        parent_T_connection = cas.TransformationMatrix.from_xyz_rpy(
             x=translation_offset[0],
             y=translation_offset[1],
             z=translation_offset[2],
@@ -213,7 +213,7 @@ class URDFParser:
                 name=connection_name,
                 parent=parent,
                 child=child,
-                origin_expression=parent_T_child,
+                parent_T_connection_expression=parent_T_connection,
             )
 
         lower_limits, upper_limits = urdf_joint_to_limits(joint)
@@ -240,7 +240,7 @@ class URDFParser:
             name=connection_name,
             parent=parent,
             child=child,
-            origin_expression=parent_T_child,
+            parent_T_connection_expression=parent_T_connection,
             multiplier=multiplier,
             offset=offset,
             axis=Vector3(*map(int, joint.axis), reference_frame=parent),

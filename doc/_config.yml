@@ -3,7 +3,7 @@
 
 title: Semantic World
 author: AICOR Institute for Artificial Intelligence
-# logo: logo.png
+logo: "images/semantic_world_logo.png"
 
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
@@ -38,6 +38,11 @@ sphinx:
       - show-inheritance
       - show-module-summary
     autoapi_add_toctree_entry: True
+    html_static_path: ["_static"]
+    html_theme_options:
+      logo:
+        image_light: "_static/images/semantic_world_logo.png"
+        image_dark: "_static/images/semantic_world_logo_dark_mode.png"
 
 
 # Information about where the book exists on the web
@@ -51,3 +56,4 @@ repository:
 html:
   use_issues_button: true
   use_repository_button: true
+  extra_css: ["_static/custom.css"]

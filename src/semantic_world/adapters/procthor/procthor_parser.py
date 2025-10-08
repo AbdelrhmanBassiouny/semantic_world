@@ -488,9 +488,11 @@ class ProcthorObject:
                 child_connection = FixedConnection(
                     parent=body_world.root,
                     child=child_world.root,
-                    origin_expression=obj_T_child,
+                    parent_T_connection_expression=obj_T_child,
                 )
-                body_world.merge_world(child_world, child_connection, handle_duplicates=True)
+                body_world.merge_world(
+                    child_world, child_connection, handle_duplicates=True
+                )
 
             return body_world
 
@@ -587,7 +589,7 @@ class ProcTHORParser:
             room_connection = FixedConnection(
                 parent=world.root,
                 child=room_world.root,
-                origin_expression=procthor_room.world_T_room,
+                parent_T_connection_expression=procthor_room.world_T_room,
             )
             world.merge_world(room_world, room_connection, handle_duplicates=True)
 
@@ -606,7 +608,7 @@ class ProcTHORParser:
             obj_connection = FixedConnection(
                 parent=world.root,
                 child=obj_world.root,
-                origin_expression=procthor_object.world_T_obj,
+                parent_T_connection_expression=procthor_object.world_T_obj,
             )
             world.merge_world(obj_world, obj_connection, handle_duplicates=True)
 
@@ -627,7 +629,7 @@ class ProcTHORParser:
             wall_connection = FixedConnection(
                 parent=world.root,
                 child=wall_world.root,
-                origin_expression=procthor_wall.world_T_wall,
+                parent_T_connection_expression=procthor_wall.world_T_wall,
             )
             world.merge_world(wall_world, wall_connection, handle_duplicates=True)
 

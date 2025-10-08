@@ -136,6 +136,18 @@ def rclpy_installed() -> bool:
         return False
 
 
+def tracy_installed() -> bool:
+    try:
+        from ament_index_python.packages import has_package
+        pkg_name = "iai_tracy_description"
+
+        if has_package(pkg_name):
+            return True
+        return False
+    except ImportError:
+        return False
+
+
 def get_semantic_world_directory_root(file_path: str) -> str:
     """
     Get the root directory of the semantic world given a file path that lays in it.

@@ -42,6 +42,7 @@ Supported Shapes are:
 ```{code-cell} ipython2
 import os
 from semantic_world.spatial_types import Point3, Vector3
+from semantic_world.world_description.shape_collection import ShapeCollection
 from semantic_world.world_description.geometry import Box, Scale, Sphere, Cylinder, FileMesh, Color
 
 box_origin = TransformationMatrix.from_xyz_rpy(x=0, y=0, z=0, roll=0, pitch=0, yaw=0, reference_frame=body)
@@ -60,8 +61,8 @@ cylinder = Cylinder(origin=cylinder_origin, width=0.05, height=0.5)
 mesh = FileMesh(origin=TransformationMatrix.from_xyz_rpy(reference_frame=body),
             filename=os.path.join(get_semantic_world_directory_root(os.getcwd()), "resources", "stl", "milk.stl"))
 
-body.collision = [cylinder, sphere, box]
-body.visual = [mesh]
+body.collision = ShapeCollection([cylinder, sphere, box], body)
+body.visual = ShapeCollection([mesh], body)
 ```
 
 When modifying your world, keep in mind that you need to open a `world.modify_world()` whenever you want to add or remove things to/from your world
@@ -77,3 +78,9 @@ rt.scene.show("jupyter")
 ```
 
 If you want to see your generated world, check out the [](visualizing-worlds) tutorial.
+```{warning}
+If you are trying to create multiple bodies without connecting them,
+you will run into trouble with the world validation.
+If you want to see how to create multiple bodies, 
+check out the [](world-structure-manipulation) tutorial.
+```

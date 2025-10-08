@@ -126,7 +126,7 @@ from semantic_world.world_description.world_entity import Connection
 with symbolic_mode():
     free_connection = the(entity(connection := let(type_=Connection, domain=world.connections), connection.parent == world.root)).evaluate()
 with world.modify_world():
-    free_connection.origin_expression = TransformationMatrix.from_xyz_rpy(1., 1., 0, 0., 0., 0.5 * np.pi)
+    free_connection.parent_T_connection_expression = TransformationMatrix.from_xyz_rpy(1., 1., 0, 0., 0., 0.5 * np.pi)
 rt = RayTracer(world)
 rt.update_scene()
 rt.scene.show("jupyter")

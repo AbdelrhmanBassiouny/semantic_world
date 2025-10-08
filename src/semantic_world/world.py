@@ -8,13 +8,13 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import IntEnum
 from functools import wraps, lru_cache, cached_property
-from itertools import combinations_with_replacement
 
 import matplotlib.pyplot as plt
 import numpy as np
 import rustworkx as rx
 import rustworkx.visit
 import rustworkx.visualization
+from itertools import combinations_with_replacement
 from lxml import etree
 from rustworkx import NoEdgeBetweenNodes
 from typing_extensions import (
@@ -429,6 +429,7 @@ class World:
         :return: None
         """
         dof._world = self
+        dof.create_and_register_symbols()
 
         initial_position = 0
         lower_limit = dof.lower_limits.position
@@ -655,6 +656,7 @@ class World:
 
         :param connection: The connection to add.
         """
+        connection.add_to_world(self)
         for dof in connection.dofs:
             if dof._world is None:
                 self.add_degree_of_freedom(dof)
@@ -897,6 +899,7 @@ class World:
         assert other is not self, "Cannot merge a world with itself."
 
         with self.modify_world():
+            old_state = deepcopy(other.state)
             self_root = self.root
             other_root = other.root
             with other.modify_world():
@@ -930,6 +933,9 @@ class World:
             if connection:
                 self.add_connection(connection, handle_duplicates=handle_duplicates)
 
+            for dof_name in old_state.keys():
+                self.state[dof_name] = old_state[dof_name]
+
     def move_branch(
         self,
         branch_root: KinematicStructureEntity,
@@ -953,7 +959,7 @@ class World:
                     parent=new_parent,
                     child=branch_root,
                     _world=self,
-                    origin_expression=new_parent_T_root,
+                    parent_T_connection_expression=new_parent_T_root,
                 )
                 self.add_connection(new_connection)
                 self.remove_connection(old_connection)
@@ -983,8 +989,8 @@ class World:
             root_connection = Connection6DoF(
                 parent=self.root, child=other.root, _world=self
             )
-            root_connection.origin = pose
             self.merge_world(other, root_connection)
+            root_connection.origin = pose
 
     def __str__(self):
         return f"{self.__class__.__name__} with {len(self.kinematic_structure_entities)} bodies."
@@ -1659,7 +1665,7 @@ class World:
                 dof_mapping[dof] = new_dof
             for connection in self.connections:
                 con_factory = ConnectionFactory.from_connection(connection)
-                new_world.add_connection(con_factory.create(new_world))
+                con_factory.create(new_world)
             for dof in self.degrees_of_freedom:
                 new_world.state[dof.name] = self.state[dof.name].data
         return new_world

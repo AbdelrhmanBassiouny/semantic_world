@@ -18,7 +18,7 @@ def test_post_init_transformation():
                 parent=root,
                 child=b1,
                 _world=w,
-                origin_expression=TransformationMatrix.from_xyz_rpy(
+                parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
                     x=1, reference_frame=root
                 ),
             )
